@@ -1,0 +1,16 @@
+{
+  "name": "app-reservas",
+  "version": "1.0.0",
+  "description": "aplicación de reservas casa de cumpleaños",
+  "license": "ISC",
+  "author": "Araceli Belén Tisocco Grigolatto",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "des": "node --watch index.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}
