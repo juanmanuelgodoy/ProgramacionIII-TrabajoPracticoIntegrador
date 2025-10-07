@@ -5,12 +5,15 @@
   "license": "ISC",
   "author": "Araceli Belén Tisocco Grigolatto",
   "type": "module",
-  "main": "index.js",
+  "main": "src/reservas.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "des": "node --watch index.js"
+    "des": "node --watch src/reservas.js"
   },
   "dependencies": {
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "handlebars": "^4.7.8",
+    "mysql2": "^3.14.5",
+    "nodemailer": "^7.0.6"
   }
 }
