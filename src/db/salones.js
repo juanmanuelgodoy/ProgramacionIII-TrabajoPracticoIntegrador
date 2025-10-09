@@ -1,7 +1,7 @@
 import {conexion} from "./conexion.js";
 
 export default class salones {
-    buscarTodos = async () => {
+    buscarTodosSalonesCompletos = async () => {
         const sql = 'SELECT * FROM salones WHERE activo=1';
         const [results, fields] = await conexion.execute(sql);
         return salones;

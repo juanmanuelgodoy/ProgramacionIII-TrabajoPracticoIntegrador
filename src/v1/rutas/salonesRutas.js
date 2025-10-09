@@ -11,5 +11,5 @@ router.post('/', controlador.crear);            // POST
 router.put('/:salon_id', controlador.editar);   // PUT
 router.delete('/:salon_id', controlador.borrar);// DELETE
 
-export { router }; // ← export único (coincide con tu import en reservas.js)
+export { router }; 
 
