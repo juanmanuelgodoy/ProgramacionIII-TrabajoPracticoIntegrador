@@ -50,12 +50,12 @@ app.post('/notificacion', async (req, res) => {
         const transporter = nodemailer.createTransport({
             service: "gmail",
             auth: {
-                user: process.env.USER,
-                pass: process.env.PASS,
+                user: process.env.USER, //correoOrigen
+                pass: process.env.PASS, //Contraseña de la app
             },
         });
         const opciones = {
-            to: correoDestino,
+            to: "aracelitisocco16@gmail.com", //correoDestino
             subject: "Notificación",
             html: html
         }
