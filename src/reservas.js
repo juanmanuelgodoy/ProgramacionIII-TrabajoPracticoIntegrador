@@ -7,7 +7,7 @@ import express from 'express';
 //import { conexion } from './db/conexion.js';
 
 // importo rutas
-import { router as v1SalonesRutas} from './v1/rutas/salonesRutas.js';
+import v1SalonesRutas from './v1/rutas/salonesRutas.js';
 // inicializo express
 const app = express (); 
 
@@ -243,6 +243,6 @@ process.loadEnvFile();
 //console.log('algo');
 
 // lanzo el servidor express
-app.listen(process.env.PUERTO, () => {
-    console.log(`Servidor arriba en ${process.env.PUERTO}`);
-})
+
+
+export default app;

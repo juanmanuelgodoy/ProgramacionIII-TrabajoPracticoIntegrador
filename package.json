@@ -8,10 +8,12 @@
   "main": "src/reservas.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "des": "node --watch src/reservas.js"
+    "des": "node --watch src/servidor.js"
   },
   "dependencies": {
+    "apicache": "^1.6.3",
     "express": "^5.1.0",
+    "express-validator": "^7.2.1",
     "handlebars": "^4.7.8",
     "mysql2": "^3.14.5",
     "nodemailer": "^7.0.6"

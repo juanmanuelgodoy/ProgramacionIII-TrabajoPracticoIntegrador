@@ -1,26 +1,38 @@
 import Salones from "../db/salones.js";
 
+
 export default class SalonesServicio {
-    constructor() {
+
+    constructor(){
         this.salones = new Salones();
     }
-    buscarTodos = async () => {
+
+    buscarTodos = () => {
         return this.salones.buscarTodos();
     }
 
-    buscarPorId = async (id) => {
-    return this.salones.buscarPorId(id);
-  }
+    buscarPorId = (salon_id) => {
+        return this.salones.buscarPorId(salon_id);
+    }
 
-  crear = async (data) => {
-    return this.salones.crear(data);
-  }
+    modificar = (salon_id, datos) => {
+        // verifico si el id de salon existe
+        const existe = this.salones.buscarPorId(salon_id);
+        if(!existe){
+            return null;
+        }
+        return this.salones.modificar(salon_id, datos);
+    }
 
-  editar = async (id, data) => {
-    return this.salones.editar(id, data);
-  }
+    crear = (salon) => {
+        return this.salones.crear(salon);
+    }
 
-  borrar = async (id) => {
-    return this.salones.borrar(id);
-  }  
+     eliminar = async (salon_id) => {
+    const existe = await this.salones.buscarPorId(salon_id);
+    if (!existe) return null;
+
+    // devolvé true/false o el objeto afectado según tu DB layer
+    return this.salones.eliminar(salon_id);
+  }
 }
