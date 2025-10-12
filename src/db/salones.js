@@ -4,7 +4,7 @@ export default class salones {
     buscarTodosSalonesCompletos = async () => {
         const sql = 'SELECT * FROM salones WHERE activo=1';
         const [results, fields] = await conexion.execute(sql);
-        return salones;
+        return results; 
     }
 
     // GET /api/v1/salones
@@ -23,7 +23,7 @@ export default class salones {
 
   // POST /api/v1/salones
   crear = async ({ titulo, direccion, capacidad, importe }) => {
-    const sql = "INSERT INTO salones (titulo, direccion, capacidad, importe, activo) VALUES (?, ?, ?, ?, 1)";
+    const sql = "INSERT INTO salones (titulo, direccion, capacidad, importe) VALUES (?, ?, ?, ?)";
     const [result] = await conexion.execute(sql, [titulo, direccion, capacidad, importe]);
     return { salon_id: result.insertId, titulo, direccion, capacidad, importe };
   };
