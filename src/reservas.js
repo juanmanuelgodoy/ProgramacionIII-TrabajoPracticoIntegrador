@@ -4,6 +4,7 @@ import express from 'express';
 import { router as v1SalonesRutas } from './v1/rutas/salonesRutas.js';
 import usuariosRutas from './v1/rutas/usuariosRutas.js'; 
 import serviciosRutas from './v1/rutas/serviciosRutas.js'; 
+import turnosRutas from './v1/rutas/turnosRutas.js';
 
 // inicializo express
 const app = express(); 
@@ -15,6 +16,7 @@ app.use(express.json());
 app.use('/api/v1/salones', v1SalonesRutas);
 app.use('/api/v1/usuarios', usuariosRutas); 
 app.use('/api/v1/servicios', serviciosRutas);
+app.use('/api/v1/turnos', turnosRutas);
 
 // carga las variables de entorno
 process.loadEnvFile();
