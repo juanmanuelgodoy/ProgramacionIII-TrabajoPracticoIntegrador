@@ -102,7 +102,7 @@ export default class SalonesControlador{
 
             // limpiaR cache del grupo "salones" para que el próximo GET traiga datos frescos
             apicache.clear('salones');
-            console.log('🧹 Cache "salones" limpiada después de crear');
+            console.log('Cache "salones" limpiada después de crear');
 
             res.json({
                 estado: true, 
@@ -135,7 +135,7 @@ export default class SalonesControlador{
 
     // limpio la caché para que el GET traiga datos actualizados
     apicache.clear('salones');
-    console.log('🧹 Cache "salones" limpiada después de eliminar');
+    console.log('Cache "salones" limpiada después de eliminar');
 
     res.json({
       estado: true,
