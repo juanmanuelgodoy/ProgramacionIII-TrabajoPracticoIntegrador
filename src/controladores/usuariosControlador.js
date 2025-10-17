@@ -16,11 +16,11 @@ export default class UsuariosControlador {
         }
     };
 
-    // GET /api/v1/usuarios/:id
+    // GET /api/v1/usuarios/:usuario_id
     buscarPorId = async (req, res) => {
         try {
-            const { id } = req.params;
-            const usuario = await this.usuariosServicio.buscarPorId(id);
+            const { usuario_id } = req.params;
+            const usuario = await this.usuariosServicio.buscarPorId(usuario_id);
             if (!usuario)
                 return res.status(404).json({ estado: false, mensaje: "El usuario no existe." });
             res.json({ estado: true, datos: usuario });
