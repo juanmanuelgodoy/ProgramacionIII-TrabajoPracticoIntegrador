@@ -44,7 +44,7 @@ export default class ReservasControlador{
             res.json({
                 estado: true, 
                 mensaje: 'Reserva creada!',
-                salon: nuevaReserva
+                reserva: nuevaReserva
             });
     
         } catch (err) {
@@ -55,6 +55,56 @@ export default class ReservasControlador{
             });
         }
     }
+   /*crear = async (req, res) => {
+    try {
+        const {
+            fecha_reserva,
+            salon_id,
+            usuario_id,
+            turno_id,
+            foto_cumpleaniero,
+            tematica,
+            importe_salon,
+            importe_total,
+            servicios
+        } = req.body;
+
+        if (
+            !fecha_reserva ||
+            !salon_id ||
+            !usuario_id ||
+            !turno_id ||
+            !importe_salon ||
+            !importe_total
+        ) {
+            return res
+                .status(400)
+                .json({ estado: false, mensaje: "Faltan datos requeridos." });
+        }
+
+        const nuevaReserva = await this.reservasServicio.crear({
+            fecha_reserva,
+            salon_id,
+            usuario_id,
+            turno_id,
+            foto_cumpleaniero,
+            tematica,
+            importe_salon,
+            importe_total,
+            servicios
+        });
+
+        res
+            .status(201)
+            .json({ estado: true, mensaje: "Reserva creada.", datos: nuevaReserva });
+    } catch (err) {
+        console.log("Error con POST /reservas", err);
+        res
+            .status(500)
+            .json({ estado: false, mensaje: "Error interno del servidor." });
+    }
+};*/
+
     
     buscarTodos = async (req, res) => {
         try {
@@ -100,4 +150,3 @@ export default class ReservasControlador{
         }
     }
 }
-
