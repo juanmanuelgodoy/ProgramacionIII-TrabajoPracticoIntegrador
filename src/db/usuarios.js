@@ -12,14 +12,14 @@ export default class Usuarios {
         return rows;
     };
 
-    // GET /api/v1/usuarios/:id
-    buscarPorId = async (id) => {
+    // GET /api/v1/usuarios/:usuario_id
+    buscarPorId = async (usuario_id) => {
         const sql = `
         SELECT usuario_id, nombre, apellido, nombre_usuario, tipo_usuario, celular, foto
         FROM usuarios
         WHERE usuario_id = ? AND activo = 1
     `;
-        const [rows] = await conexion.execute(sql, [id]);
+        const [rows] = await conexion.execute(sql, [usuario_id]);
         return rows[0] || null;
     };
 
