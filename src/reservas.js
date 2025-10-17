@@ -8,6 +8,7 @@ import express from 'express';
 
 // importo rutas
 import v1SalonesRutas from './v1/rutas/salonesRutas.js';
+import v1ReservasRutas from './v1/rutas/reservasRutas.js';
 // inicializo express
 const app = express (); 
 
@@ -16,6 +17,7 @@ const app = express ();
 app.use(express.json());
 
 app.use('/api/v1/salones', v1SalonesRutas);
+app.use('/api/v1/reservas', v1ReservasRutas);
 
 
 
