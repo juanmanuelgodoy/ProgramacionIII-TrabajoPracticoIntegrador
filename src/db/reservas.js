@@ -2,178 +2,141 @@ import { conexion } from "./conexion.js";
 
 export default class Reservas {
 
-  // ========== LISTAR ==========
-  buscarTodos = async (limit = 50, offset = 0) => {
-    const sql = `
-      SELECT
-        r.reserva_id,
-        r.fecha_reserva,
-        r.tematica,
-        r.foto_cumpleaniero,
-        r.importe_salon,
-        r.importe_total,
+    buscarPropias = async(usuario_id) => {
+        const sql = 'SELECT * FROM reservas WHERE activo = 1 AND usuario_id = ?';
+        const [reservas] = await conexion.execute(sql, [usuario_id]);
+        return reservas;
+    }
+    
+    buscarTodos = async() => {
+        const sql = 'SELECT * FROM reservas WHERE activo = 1';
+        const [reservas] = await conexion.execute(sql);
+        return reservas;
+    }
 
-        JSON_OBJECT(
-          'salon_id', s.salon_id,
-          'titulo',   s.titulo
-        ) AS salon,
+    buscarPorId = async(reserva_id) => {
+        const sql = 'SELECT * FROM reservas WHERE activo = 1 AND reserva_id = ?';
+        const [reserva] = await conexion.execute(sql, [reserva_id]);
+        if(reserva.length === 0){
+            return null;
+        }
 
-        JSON_OBJECT(
-          'turno_id',    t.turno_id,
-          'hora_desde',  t.hora_desde,
-          'hora_hasta',  t.hora_hasta
-        ) AS turno,
+        return reserva[0];
+    }
+   // eliminar reserva
+    eliminar = async (reserva_id) => {
+  // Limpio servicios asociados (tabla puente) y hago soft delete en reservas
+  await conexion.execute(
+    'DELETE FROM reservas_servicios WHERE reserva_id = ?',
+    [reserva_id]
+  );
 
-        COALESCE(
-          JSON_ARRAYAGG(
-            IF(sv.servicio_id IS NULL, NULL,
-              JSON_OBJECT(
-                'servicio_id', sv.servicio_id,
-                'descripcion', sv.descripcion,
-                'importe',     COALESCE(rs.importe, sv.importe)
-              )
-            )
-          ORDER BY sv.descripcion
-          ),
-          JSON_ARRAY()
-        ) AS servicios
+  const [r] = await conexion.execute(
+    'UPDATE reservas SET activo = 0 WHERE reserva_id = ?',
+    [reserva_id]
+  );
 
-      FROM reservas r
-      INNER JOIN salones s ON s.salon_id = r.salon_id AND s.activo = 1
-      INNER JOIN turnos  t ON t.turno_id = r.turno_id AND t.activo = 1
-      LEFT JOIN reservas_servicios rs ON rs.reserva_id = r.reserva_id
-      LEFT JOIN servicios sv ON sv.servicio_id = rs.servicio_id AND sv.activo = 1
-      WHERE r.activo = 1
-      GROUP BY r.reserva_id
-      ORDER BY r.creado DESC
-      LIMIT ? OFFSET ?
-    `;
-
-    const [rows] = await conexion.execute(sql, [Number(limit), Number(offset)]);
-    return rows.map(r => ({
-      reserva_id: r.reserva_id,
-      fecha_reserva: r.fecha_reserva,
-      tematica: r.tematica,
-      foto_cumpleaniero: r.foto_cumpleaniero,
-      importe_salon: r.importe_salon,
-      importe_total: r.importe_total,
-      salon: typeof r.salon === "string" ? JSON.parse(r.salon) : r.salon,
-      turno: typeof r.turno === "string" ? JSON.parse(r.turno) : r.turno,
-      servicios: typeof r.servicios === "string" ? JSON.parse(r.servicios) : r.servicios
-    }));
-  };
-
-  // ========== OBTENER POR ID ==========
-  buscarPorId = async (reserva_id) => {
-    const sql = `
-      SELECT
-        r.reserva_id,
-        r.fecha_reserva,
-        r.tematica,
-        r.foto_cumpleaniero,
-        r.importe_salon,
-        r.importe_total,
-
-        JSON_OBJECT(
-          'salon_id',  s.salon_id,
-          'titulo',    s.titulo,
-          'direccion', s.direccion,
-          'capacidad', s.capacidad,
-          'importe',   s.importe
-        ) AS salon,
-
-        JSON_OBJECT(
-          'turno_id',    t.turno_id,
-          'hora_desde',  t.hora_desde,
-          'hora_hasta',  t.hora_hasta
-        ) AS turno,
-
-        COALESCE(
-          JSON_ARRAYAGG(
-            IF(sv.servicio_id IS NULL, NULL,
-              JSON_OBJECT(
-                'servicio_id', sv.servicio_id,
-                'descripcion', sv.descripcion,
-                'importe',     COALESCE(rs.importe, sv.importe)
-              )
-            )
-          ORDER BY sv.descripcion
-          ),
-          JSON_ARRAY()
-        ) AS servicios
-
-      FROM reservas r
-      INNER JOIN salones s ON s.salon_id = r.salon_id AND s.activo = 1
-      INNER JOIN turnos  t ON t.turno_id = r.turno_id AND t.activo = 1
-      LEFT JOIN reservas_servicios rs ON rs.reserva_id = r.reserva_id
-      LEFT JOIN servicios sv ON sv.servicio_id = rs.servicio_id AND sv.activo = 1
-      WHERE r.activo = 1 AND r.reserva_id = ?
-      GROUP BY r.reserva_id
-    `;
-
-    const [rows] = await conexion.execute(sql, [reserva_id]);
-    if (rows.length === 0) return null;
-
-    const r = rows[0];
-    return {
-      reserva_id: r.reserva_id,
-      fecha_reserva: r.fecha_reserva,
-      tematica: r.tematica,
-      foto_cumpleaniero: r.foto_cumpleaniero,
-      importe_salon: r.importe_salon,
-      importe_total: r.importe_total,
-      salon: typeof r.salon === "string" ? JSON.parse(r.salon) : r.salon,
-      turno: typeof r.turno === "string" ? JSON.parse(r.turno) : r.turno,
-      servicios: typeof r.servicios === "string" ? JSON.parse(r.servicios) : r.servicios
-    };
-  };
-
-  // ========== CREAR ==========
-  crear = async (reserva) => {
-    const {
-      fecha_reserva,
-      salon_id,
-      usuario_id,
-      turno_id,
-      foto_cumpleaniero,
-      tematica,
-      importe_salon,
-      importe_total
-    } = reserva;
-
-    const sql = `
-      INSERT INTO reservas
-        (fecha_reserva, salon_id, usuario_id, turno_id, foto_cumpleaniero, tematica, importe_salon, importe_total)
-      VALUES (?,?,?,?,?,?,?,?)
-    `;
-
-    const [result] = await conexion.execute(sql, [
-      fecha_reserva, salon_id, usuario_id, turno_id,
-      foto_cumpleaniero, tematica, importe_salon, importe_total
-    ]);
-
-    if (result.affectedRows === 0) return null;
-
-    return this.buscarPorId(result.insertId);
-  };
-
-  // ========== DATOS PARA NOTIFICACIÓN ==========
-  datosParaNotificacion = async (reserva_id) => {
-    const sql = `
-      SELECT
-        r.fecha_reserva AS fecha,
-        s.titulo        AS salon,
-        t.orden         AS turno
-      FROM reservas r
-      INNER JOIN salones s ON s.salon_id = r.salon_id
-      INNER JOIN turnos  t ON t.turno_id = r.turno_id
-      WHERE r.activo = 1 AND r.reserva_id = ?
-    `;
-    const [reserva] = await conexion.execute(sql, [reserva_id]);
-    if (reserva.length === 0) return null;
-    return reserva[0];
-  };
+  return r.affectedRows > 0; // true si se marcó como inactiva
 }
 
+    crear = async(reserva) => {
+        const {
+                fecha_reserva,
+                salon_id,
+                usuario_id,
+                turno_id,
+                foto_cumpleaniero, 
+                tematica,
+                importe_salon,
+                importe_total 
+            } = reserva;
+        
+        const sql = `INSERT INTO reservas 
+            (fecha_reserva, salon_id, usuario_id, turno_id, foto_cumpleaniero, tematica, importe_salon, importe_total) 
+            VALUES (?,?,?,?,?,?,?,?)`;
+        
+        const [result] = await conexion.execute(sql, 
+            [fecha_reserva, salon_id, usuario_id, turno_id, foto_cumpleaniero, tematica, importe_salon, importe_total]);
 
+        if (result.affectedRows === 0){
+            return null;
+        }
+
+        return this.buscarPorId(result.insertId);
+    }
+// modificar reservas
+    modificar = async (reserva_id, datos) => {
+  const permitidos = [
+    'fecha_reserva',
+    'salon_id',
+    'usuario_id',
+    'turno_id',
+    'foto_cumpleaniero',
+    'tematica',
+    'importe_salon',
+    'importe_total'
+  ];
+
+  const { servicios, ...resto } = datos || {};
+  const campos = Object.keys(resto).filter(c => permitidos.includes(c));
+  const valores = campos.map(c => resto[c]);
+
+  try {
+    // Usamos la MISMA conexión (createConnection) para la transacción
+    await conexion.beginTransaction();
+
+    // UPDATE de reservas (si llegó algún campo editable)
+    if (campos.length > 0) {
+      const setSql = campos.map(c => `${c} = ?`).join(', ');
+      const [upd] = await conexion.execute(
+        `UPDATE reservas SET ${setSql} WHERE reserva_id = ?`,
+        [...valores, reserva_id]
+      );
+      if (upd.affectedRows === 0) {
+        await conexion.rollback();
+        return null; // no existe la reserva
+      }
+    }
+
+    // Reemplazo de servicios SOLO si vino "servicios" en el body
+    if (Array.isArray(servicios)) {
+      await conexion.execute(`DELETE FROM reservas_servicios WHERE reserva_id = ?`, [reserva_id]);
+      if (servicios.length > 0) {
+        const sqlIns = `INSERT INTO reservas_servicios (reserva_id, servicio_id, importe) VALUES (?, ?, ?)`;
+        for (const s of servicios) {
+          await conexion.execute(sqlIns, [reserva_id, s.servicio_id, s.importe]);
+        }
+      }
+    }
+
+    await conexion.commit();
+    return await this.buscarPorId(reserva_id);
+  } catch (e) {
+    try { await conexion.rollback(); } catch {}
+    throw e;
+  }
+}
+
+    datosParaNotificacion = async(reserva_id) => {
+        const sql = `CALL obtenerDatosNotificacion(?)`;
+        
+        const [reserva] = await conexion.execute(sql, [reserva_id]);
+        if(reserva.length === 0){
+            return null;
+        }
+
+        return reserva;
+    }
+    
+    // Marcar una reserva como confirmada (sin usar columna "estado")
+marcarConfirmada = async (reserva_id) => {
+  const sql = `
+    UPDATE reservas
+    SET activo = 1, modificado = NOW()
+    WHERE reserva_id = ?;
+  `;
+  const [r] = await conexion.execute(sql, [reserva_id]);
+  return r.affectedRows > 0;
+}
+}
 

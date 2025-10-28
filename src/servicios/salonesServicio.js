@@ -1,9 +1,8 @@
 import Salones from "../db/salones.js";
 
-
 export default class SalonesServicio {
 
-    constructor(){
+    constructor() {
         this.salones = new Salones();
     }
 
@@ -16,9 +15,8 @@ export default class SalonesServicio {
     }
 
     modificar = (salon_id, datos) => {
-        // verifico si el id de salon existe
         const existe = this.salones.buscarPorId(salon_id);
-        if(!existe){
+        if (!existe) {
             return null;
         }
         return this.salones.modificar(salon_id, datos);
@@ -28,11 +26,13 @@ export default class SalonesServicio {
         return this.salones.crear(salon);
     }
 
-     eliminar = async (salon_id) => {
-    const existe = await this.salones.buscarPorId(salon_id);
-    if (!existe) return null;
-
-    // devolvé true/false o el objeto afectado según tu DB layer
-    return this.salones.eliminar(salon_id);
-  }
+    // Eliminar un salón (borrado lógico)
+    eliminar = async (salon_id) => {
+        const existe = await this.salones.buscarPorId(salon_id);
+        if (!existe) {
+            return false;
+        }
+        return this.salones.eliminar(salon_id);
+    }
 }
+

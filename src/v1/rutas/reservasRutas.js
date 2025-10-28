@@ -1,65 +1,58 @@
-// src/v1/rutas/reservasRutas.js
-import { Router } from "express";
-import { check } from "express-validator";
-import { validarCampos } from "../../middlewares/validarCampos.js";
-import { validarJWT, permitirRoles } from "../../middlewares/auth.js";
-import ReservasControlador from "../../controladores/reservasControlador.js";
+import express from 'express';
+import { check } from 'express-validator';
+import { validarCampos } from '../../middlewares/validarCampos.js';
+import autorizarUsuarios from '../../middlewares/autorizarUsuarios.js';
+import ReservasControlador from '../../controladores/reservasControlador.js';
 
-const router = Router();
-const c = new ReservasControlador();
+const reservasControlador = new ReservasControlador();
+const router = express.Router();
 
-/**
- * CLIENTE (tipo_usuario = 3)
- * - Crear su reserva (usuario_id se toma del token en el controlador)
- * - Listar SOLO sus reservas
- */
-router.post(
-  "/",
-  [
-    validarJWT,
-    permitirRoles(3),
-    check("fecha_reserva", "La fecha es necesaria.").notEmpty(),
-    check("salon_id", "El salón es necesario.").isInt().toInt(),
-    check("turno_id", "El turno es necesario.").isInt().toInt(),
-    check("servicios", "Faltan los servicios de la reserva.").isArray({ min: 1 }),
-    check("servicios.*.servicio_id", "servicio_id es requerido.").isInt().toInt(),
-    check("servicios.*.importe", "El importe debe ser numérico.").isFloat(),
-    validarCampos,
-  ],
-  c.crear
-);
+router.get('/:reserva_id',  autorizarUsuarios([1,2,3]), reservasControlador.buscarPorId);
 
-router.get("/mias", validarJWT, permitirRoles(3), c.listarMias);
+router.get('/',  autorizarUsuarios([1,2,3]), reservasControlador.buscarTodos);
 
-/**
- * EMPLEADO (2) o ADMIN (1)
- * - Ver TODAS las reservas
- */
-router.get("/", validarJWT, permitirRoles(1, 2), c.buscarTodos);
+router.post('/', autorizarUsuarios([1,3]),
+    [
+        check('fecha_reserva', 'La fecha es necesaria.').notEmpty(),
+        check('salon_id', 'El salón es necesario.').notEmpty(),
+        check('usuario_id', 'El usuario es necesario.').notEmpty(), 
+        check('turno_id', 'El turno es necesario.').notEmpty(),  
+        check('servicios', 'Faltan los servicios de la reserva.')
+        .notEmpty()
+        .isArray(),
+        check('servicios.*.importe')
+        .isFloat() 
+        .withMessage('El importe debe ser numérico.'),   
+        validarCampos
+    ],
+    reservasControlador.crear);
 
-/**
- * VER POR ID
- * - Todos autenticados (cliente, empleado, admin)
- */
-router.get("/:reserva_id", validarJWT, permitirRoles(1, 2, 3), c.buscarPorId);
-
-/**
- * SOLO ADMIN (1)
- * - Actualizar / Eliminar reservas
- */
+// Modificar reserva (solo ADMIN = 1)
 router.put(
-  "/:id",
+  '/:reserva_id',
+  autorizarUsuarios([1]),
   [
-    validarJWT,
-    permitirRoles(1),
-    // agregá acá validaciones si tu update lo requiere
+    check('fecha_reserva').optional().isISO8601().withMessage('fecha_reserva debe ser ISO8601 (YYYY-MM-DD)'),
+    check('salon_id').optional().isInt({ min: 1 }),
+    check('usuario_id').optional().isInt({ min: 1 }),
+    check('turno_id').optional().isInt({ min: 1 }),
+    check('foto_cumpleaniero').optional().isString(),
+    check('tematica').optional().notEmpty(),
+    check('importe_salon').optional().isFloat({ gt: 0 }),
+    check('importe_total').optional().isFloat({ gt: 0 }),
+
+    // Si actualizás servicios, debe venir un array de objetos { servicio_id, importe }
+    check('servicios').optional().isArray(),
+    check('servicios.*.servicio_id').optional().isInt({ min: 1 }),
+    check('servicios.*.importe').optional().isFloat({ gt: 0 }),
+
     validarCampos,
   ],
-  c.actualizar
+  reservasControlador.modificar
 );
 
-router.delete("/:id", validarJWT, permitirRoles(1), c.eliminar);
-
-export default router;
-
-
+// Eliminar (solo ADMIN = 1)
+router.delete('/:reserva_id', autorizarUsuarios([1]), reservasControlador.eliminar);
+// Confirmar (empleado/admin)
+router.put('/:reserva_id/confirmar', autorizarUsuarios([1,2]), reservasControlador.confirmar);
+export { router };
