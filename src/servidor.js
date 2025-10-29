@@ -5,7 +5,7 @@ import passport from "passport";
 
 import { estrategia, validacion } from "./config/passport.js";
 
-import { router as authRoutes } from "./v1/rutas/authRoutes.js";
+import { router as authRutas } from "./v1/rutas/authRutas.js";
 import { router as salonesRutas } from "./v1/rutas/salonesRutas.js";
 import { router as reservasRutas } from "./v1/rutas/reservasRutas.js";
 import { router as serviciosRutas } from "./v1/rutas/serviciosRutas.js";
@@ -30,7 +30,7 @@ passport.use("jwt", validacion);     // validación de token
 app.get("/api/health", (req, res) => res.json({ ok: true }));
 
 // Rutas
-app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/auth", authRutas);
 app.use("/api/v1/salones", salonesRutas);
 app.use("/api/v1/reservas", reservasRutas);
 app.use("/api/v1/servicios", serviciosRutas);

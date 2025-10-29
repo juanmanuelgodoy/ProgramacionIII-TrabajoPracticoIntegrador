@@ -1,11 +1,11 @@
 import express from 'express';
-import AuthController from '../../controladores/authController.js';
+import AuthControlador from '../../controladores/authControlador.js';
 
 import { check } from 'express-validator';
 import { validarCampos } from '../../middlewares/validarCampos.js';
 
 const router = express.Router();
-const authController = new AuthController();
+const authControlador = new AuthControlador();
 
 router.post('/login', 
     [
@@ -14,6 +14,6 @@ router.post('/login',
         check('contrasenia', 'La contrasenia es requerida!').not().isEmpty(),
         validarCampos
     ], 
-    authController.login);
+    authControlador.login);
 
 export {router};

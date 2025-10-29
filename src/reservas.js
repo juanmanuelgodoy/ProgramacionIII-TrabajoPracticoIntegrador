@@ -8,7 +8,7 @@ import { estrategia, validacion} from './config/passport.js';
 
 import { router as v1SalonesRutas} from './v1/rutas/salonesRutas.js';
 import { router as v1ReservasRutas} from './v1/rutas/reservasRutas.js';
-import { router as v1AuthRouter} from './v1/rutas/authRoutes.js';
+import { router as v1AuthRouter} from './v1/rutas/authRutas.js';
 
 const app = express();
 
