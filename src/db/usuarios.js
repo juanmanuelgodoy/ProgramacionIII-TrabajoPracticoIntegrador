@@ -25,7 +25,17 @@ export default class Usuarios {
     return result[0];
   };
 
-  // ======= NUEVOS =======
+  // === Reiniciar contraseña ===
+  reiniciarContrasenia = async (usuario_id, nuevaPlano = "Prog3DW") => {
+    const sql = `
+      UPDATE usuarios
+      SET contrasenia = SHA2(?, 256), modificado = NOW()
+      WHERE usuario_id = ? AND activo = 1
+    `;
+
+    const [result] = await conexion.query(sql, [nuevaPlano, usuario_id]);
+    return result.affectedRows > 0;
+  };
 
   buscarTodos = async () => {
     const sql = `
@@ -46,7 +56,10 @@ export default class Usuarios {
       VALUES (?, ?, ?, SHA2(?,256), ?, 1)
     `;
 
-    const [r] = await conexion.execute(sql, [nombre, apellido, nombre_usuario, contrasenia, tipo_usuario]);
+    const [r] = await conexion.execute(sql, [
+      nombre, apellido, nombre_usuario, contrasenia, tipo_usuario
+    ]);
+
     if (r.affectedRows === 0) return null;
     return this.buscarPorId(r.insertId);
   };
@@ -57,9 +70,9 @@ export default class Usuarios {
     const campos = Object.keys(datos).filter(k => permitidos.includes(k));
     if (campos.length === 0) return await this.buscarPorId(usuario_id);
 
-    // SET dinámico con hash si viene 'contrasenia'
     const parts = [];
     const values = [];
+
     for (const c of campos) {
       if (c === 'contrasenia') {
         parts.push(`contrasenia = SHA2(?,256)`);
@@ -69,12 +82,14 @@ export default class Usuarios {
         values.push(datos[c]);
       }
     }
+
     const setSql = parts.join(', ');
 
     const [upd] = await conexion.execute(
       `UPDATE usuarios SET ${setSql} WHERE usuario_id = ?`,
       [...values, usuario_id]
     );
+
     if (upd.affectedRows === 0) return null;
     return this.buscarPorId(usuario_id);
   };
@@ -87,4 +102,5 @@ export default class Usuarios {
     return r.affectedRows > 0;
   };
 }
+
 

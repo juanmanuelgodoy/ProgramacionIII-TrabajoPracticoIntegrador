@@ -1,3 +1,5 @@
+process.loadEnvFile();   // Cargar .env
+
 import nodemailer from 'nodemailer';
 import fs from 'fs';
 import path from 'path';
@@ -6,57 +8,164 @@ import handlebars from 'handlebars';
 
 export default class NotificacionesService {
 
-    enviarCorreo = async (datosCorreo) => {        
-        const __filename = fileURLToPath(import.meta.url);
-        const __dirname = path.dirname(__filename);
-        const plantillaPath = path.join(__dirname, '../utiles/handlebars/plantilla.hbs');
-        const plantilla = fs.readFileSync(plantillaPath, 'utf-8');
+  constructor() {
+    const __filename = fileURLToPath(import.meta.url);
+    this.__dirname = path.dirname(__filename);
 
-        const template = handlebars.compile(plantilla);
-        
-        const datos = {
-            fecha: datosCorreo[0].map(a => a.fecha),
-            salon: datosCorreo[0].map(a => a.salon),
-            turno: datosCorreo[0].map(a => a.turno)
-        };
+    // 1) Plantilla
+    const plantillaPath = path.join(this.__dirname, '../utiles/plantilla.hbs');
+    const plantilla = fs.readFileSync(plantillaPath, 'utf-8');
+    this.template = handlebars.compile(plantilla);
 
-        const correoHtml = template(datos);
-        
-        const transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-                user: process.env.CORREO,
-                pass: process.env.CLAVE
-            }
-        });
+    // 2) Elegir credenciales: CORREO/CLAVE o USERCORREO/PASSCORREO
+    const user =
+      (process.env.CORREO || process.env.USERCORREO || '').trim();
+    const pass =
+      (process.env.CLAVE  || process.env.PASSCORREO  || '').trim();
 
-        // CORREOS DE LOS ADMINISTRADORES
-        const correosAdmin = datosCorreo[1].map(a => a.correoAdmin);
-        // SEPARO POR COMA PARA AGREGAR A LAS OPCIONES DEL ENVIO
-        const destinatarios = correosAdmin.join(', ');
-
-        const mailOptions = {
-            from: process.env.CORREO,
-            to: destinatarios,
-            // cc: clientes/admin COMPLETAR TAREA
-            subject: "Nueva Reserva",
-            html: correoHtml
-        };
-        
-        transporter.sendMail(mailOptions, (error, info) => {
-            if(error){
-                console.log(`Error enviado el correo`, error);       
-                return false;
-            }
-            return true;
-        });
+    if (!user || !pass) {
+      console.error('[MAIL] Faltan variables .env. Setea CORREO/CLAVE o USERCORREO/PASSCORREO.');
     }
 
-    // OTROS TIPOS DE NOTIFICACION
-    enviarMensaje = async (datos) => {} 
-    
-    enviarWhatsapp = async (datos) => {} 
+    // Guardamos qué user se está usando para usarlo también en "from"
+    this.mailUser = user;
 
-    enviarNotificacionPush = async (datos) => {} 
+    // Logs útiles (sin exponer la clave)
+    console.log('[ENV] usando usuario SMTP =', this.mailUser);
+    console.log('[ENV] longitud de clave =', pass.length);
 
+    // 3) Transporter
+    this.transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: { user, pass }
+    });
+
+    // 4) Verificación
+    this.transporter.verify()
+      .then(() => console.log('[MAIL] Transporter listo para enviar.'))
+      .catch(err => console.error('[MAIL] ERROR verify():', err?.message));
+  }
+
+  // ------------------------------------------------------------
+  // Email a administradores (cuando se crea la reserva)
+  // ------------------------------------------------------------
+  enviarCorreoAdmins = async (payload) => {
+    try {
+      const { reserva, admins } = payload || {};
+      if (!reserva || !admins?.length) {
+        console.warn('[MAIL->ADMINS] Sin admins activos o payload vacío.');
+        return false;
+      }
+
+      const destinatarios = admins.map(a => a.correoAdmin).join(', ');
+      const html = this.template({
+        titulo: 'Nueva reserva creada',
+        saludo: 'Hola equipo,',
+        cuerpo: 'Se registró una nueva reserva.',
+        fecha:  reserva.fecha,
+        salon:  reserva.salon,
+        turno:  reserva.turno,
+        nombre: `${reserva.clienteNombre} ${reserva.clienteApellido}`,
+        pie:    'Por favor, revisar y confirmar desde el panel.'
+      });
+
+      const mailOptions = {
+        from: this.mailUser,
+        to: destinatarios,
+        subject: 'Nueva reserva creada',
+        html
+      };
+
+      const info = await this.transporter.sendMail(mailOptions);
+      console.log('[MAIL->ADMINS] Enviado:', info?.messageId);
+      return true;
+
+    } catch (err) {
+      console.error('[MAIL->ADMINS] ERROR:', err?.message);
+      return false;
+    }
+  }
+
+  // ------------------------------------------------------------
+  // Email al cliente (cuando se confirma la reserva)
+  // ------------------------------------------------------------
+  enviarCorreoCliente = async (payload) => {
+    try {
+      const { reserva } = payload || {};
+      if (!reserva?.clienteCorreo) {
+        console.warn('[MAIL->CLIENTE] clienteCorreo vacío.');
+        return false;
+      }
+
+      const html = this.template({
+        titulo: '¡Tu reserva fue confirmada!',
+        saludo: `Hola ${reserva.clienteNombre},`,
+        cuerpo: 'Te confirmamos tu reserva.',
+        fecha:  reserva.fecha,
+        salon:  reserva.salon,
+        turno:  reserva.turno,
+        nombre: `${reserva.clienteNombre} ${reserva.clienteApellido}`,
+        pie: '¡Gracias por elegirnos!'
+      });
+
+      const mailOptions = {
+        from: this.mailUser,
+        to: reserva.clienteCorreo,
+        subject: 'Reserva confirmada',
+        html
+      };
+
+      const info = await this.transporter.sendMail(mailOptions);
+      console.log('[MAIL->CLIENTE] Enviado:', info?.messageId);
+      return true;
+
+    } catch (err) {
+      console.error('[MAIL->CLIENTE] ERROR:', err?.message);
+      return false;
+    }
+  }
+
+  // ------------------------------------------------------------
+  // Email al usuario cuando se reinicia su contraseña
+  // ------------------------------------------------------------
+  enviarCorreoReinicio = async (payload) => {
+    try {
+      const { usuario, nuevaPass } = payload || {};
+
+      // En la DB el correo es nombre_usuario
+      const destino = usuario?.nombre_usuario || '';
+
+      if (!destino) {
+        console.warn('[MAIL->REINICIO] El usuario no tiene correo cargado.');
+        return false;
+      }
+
+      const html = this.template({
+        titulo: 'Reinicio de contraseña',
+        saludo: `Hola ${usuario?.nombre},`,
+        cuerpo: 'Tu contraseña ha sido restablecida por un administrador.',
+        fecha: '',
+        salon: '',
+        turno: '',
+        nombre: `${usuario?.nombre} ${usuario?.apellido}`,
+        pie: `Tu nueva contraseña temporal es: ${nuevaPass}`
+      });
+
+      const mailOptions = {
+        from: this.mailUser,
+        to: destino,
+        subject: 'Tu contraseña fue reiniciada',
+        html
+      };
+
+      const info = await this.transporter.sendMail(mailOptions);
+      console.log('[MAIL->REINICIO] Enviado:', info?.messageId);
+      return true;
+
+    } catch (err) {
+      console.error('[MAIL->REINICIO] ERROR:', err?.message);
+      return false;
+    }
+  }
 }
+

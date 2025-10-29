@@ -7,13 +7,19 @@ import UsuariosControlador from "../../controladores/usuariosControlador.js";
 const router = express.Router();
 const ctrl = new UsuariosControlador();
 
-// Listado completo: solo admin
+// ==============================
+// LISTAR TODOS (solo admin)
+// ==============================
 router.get("/", autorizarUsuarios([1]), ctrl.buscarTodos);
 
-// Ver detalle: admin/empleado cualquiera; cliente propio (lo resuelve el servicio)
-router.get("/:usuario_id", autorizarUsuarios([1,2,3]), ctrl.buscarPorId);
+// ==============================
+// VER DETALLE (admin/empleado/cliente propio)
+// ==============================
+router.get("/:usuario_id", autorizarUsuarios([1, 2, 3]), ctrl.buscarPorId);
 
-// Crear (ADMIN)
+// ==============================
+// CREAR (solo admin)
+// ==============================
 router.post(
   "/",
   autorizarUsuarios([1]),
@@ -28,7 +34,9 @@ router.post(
   ctrl.crear
 );
 
-// Modificar (ADMIN)
+// ==============================
+// MODIFICAR (solo admin)
+// ==============================
 router.put(
   "/:usuario_id",
   autorizarUsuarios([1]),
@@ -43,7 +51,19 @@ router.put(
   ctrl.modificar
 );
 
-// Eliminar (ADMIN) – soft delete
+// ==============================
+// ELIMINAR (solo admin)
+// ==============================
 router.delete("/:usuario_id", autorizarUsuarios([1]), ctrl.eliminar);
 
+// ==============================
+// REINICIO DE CONTRASEÑA (solo admin)
+// ==============================
+router.put(
+  "/:usuario_id/reiniciar",
+  autorizarUsuarios([1]),   // Solo ADMIN puede reiniciar clave
+  ctrl.reiniciarContrasenia
+);
+
 export { router };
+
