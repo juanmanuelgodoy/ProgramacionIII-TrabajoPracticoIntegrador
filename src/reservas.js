@@ -1,27 +1,35 @@
 import express from 'express';
+// PASSPORT 
+import passport from 'passport';
+import morgan from 'morgan';
+import fs from 'fs';
 
-// importo rutas
-import { router as v1SalonesRutas } from './v1/rutas/salonesRutas.js';
-import usuariosRutas from './v1/rutas/usuariosRutas.js'; 
-import serviciosRutas from './v1/rutas/serviciosRutas.js'; 
-import turnosRutas from './v1/rutas/turnosRutas.js';
+import { estrategia, validacion} from './config/passport.js';
 
-// inicializo express
-const app = express(); 
+import { router as v1SalonesRutas} from './v1/rutas/salonesRutas.js';
+import { router as v1ReservasRutas} from './v1/rutas/reservasRutas.js';
+import { router as v1AuthRouter} from './v1/rutas/authRoutes.js';
 
-// las solicitudes con body en json las interpreta como json
+const app = express();
+
+// middlewares 
 app.use(express.json());
+// CONFIGURACION PASSPORT
+passport.use(estrategia);
+passport.use(validacion);
+app.use(passport.initialize());
+
+// morgan
+let log = fs.createWriteStream('./access.log', { flags: 'a' })
+app.use(morgan('combined')) // en consola
+app.use(morgan('combined', { stream: log })) // en el archivo
+
 
 // rutas
+app.use('/api/v1/auth', v1AuthRouter); // AUTENTICACIÓN
 app.use('/api/v1/salones', v1SalonesRutas);
-app.use('/api/v1/usuarios', usuariosRutas); 
-app.use('/api/v1/servicios', serviciosRutas);
-app.use('/api/v1/turnos', turnosRutas);
 
-// carga las variables de entorno
-process.loadEnvFile();
+// AHORA LA RUTA REQUIERE DE AUTENTICACIÓN
+app.use('/api/v1/reservas', passport.authenticate( 'jwt', { session:false }), v1ReservasRutas);
 
-// lanzo el servidor express
-app.listen(process.env.PUERTO, () => {
-    console.log(`Servidor arriba en ${process.env.PUERTO}`);
-});
+export default app;

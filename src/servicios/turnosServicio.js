@@ -1,32 +1,19 @@
 import Turnos from "../db/turnos.js";
 
 export default class TurnosServicio {
-    constructor() {
-        this.turnos = new Turnos();
-    }
+  constructor() { this.turnos = new Turnos(); }
 
-    // GET: obtener todos los turnos
-    buscarTodos = async () => {
-        return this.turnos.buscarTodos();
-    };
+  buscarTodos = () => this.turnos.buscarTodos();
+  buscarPorId = (id) => this.turnos.buscarPorId(id);
 
-    // GET: obtener turno por ID
-    buscarPorId = async (turno_id) => {
-        return this.turnos.buscarPorId(turno_id);
-    };
+  crear = (dto) => this.turnos.crear(dto);
 
-    // POST: crear nuevo turno
-    crear = async (data) => {
-        return this.turnos.crear(data);
-    };
+  actualizar = async (id, dto) => {
+    const ok = await this.turnos.actualizar(id, dto);
+    if (!ok) return null;
+    return this.turnos.buscarPorId(id);
+  };
 
-    // PUT: editar turno
-    editar = async (turno_id, data) => {
-        return this.turnos.editar(turno_id, data);
-    };
-
-    // DELETE: borrar turno (soft delete)
-    borrar = async (turno_id) => {
-        return this.turnos.borrar(turno_id);
-    };
+  eliminar = (id) => this.turnos.eliminar(id);
 }
+

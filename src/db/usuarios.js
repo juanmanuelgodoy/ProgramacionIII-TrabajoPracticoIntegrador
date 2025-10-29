@@ -1,97 +1,90 @@
 import { conexion } from "./conexion.js";
 
 export default class Usuarios {
-    // GET /api/v1/usuarios
-    buscarTodos = async () => {
-        const sql = `
-        SELECT usuario_id, nombre, apellido, nombre_usuario, tipo_usuario, celular, foto
-        FROM usuarios
-        WHERE activo = 1
+
+  buscar = async (nombre_usuario, contrasenia) => {
+    const sql = `
+      SELECT u.usuario_id, CONCAT(u.nombre, ' ', u.apellido) AS usuario, u.tipo_usuario
+      FROM usuarios u
+      WHERE u.nombre_usuario = ?
+        AND u.contrasenia = SHA2(?, 256)
+        AND u.activo = 1;
     `;
-        const [rows] = await conexion.execute(sql);
-        return rows;
-    };
+    const [result] = await conexion.query(sql, [nombre_usuario, contrasenia]);
+    return result[0];
+  };
 
-    // GET /api/v1/usuarios/:usuario_id
-    buscarPorId = async (usuario_id) => {
-        const sql = `
-        SELECT usuario_id, nombre, apellido, nombre_usuario, tipo_usuario, celular, foto
-        FROM usuarios
-        WHERE usuario_id = ? AND activo = 1
+  buscarPorId = async (usuario_id) => {
+    const sql = `
+      SELECT u.usuario_id, u.tipo_usuario, u.nombre, u.apellido, u.nombre_usuario,
+             CONCAT(u.nombre, ' ', u.apellido) AS usuario
+      FROM usuarios u
+      WHERE u.usuario_id = ? AND u.activo = 1;
     `;
-        const [rows] = await conexion.execute(sql, [usuario_id]);
-        return rows[0] || null;
-    };
+    const [result] = await conexion.query(sql, [usuario_id]);
+    return result[0];
+  };
 
-    // POST /api/v1/usuarios
-    crear = async ({ nombre, apellido, nombre_usuario, contrasenia, tipo_usuario, celular, foto }) => {
-        const sql = `
-        INSERT INTO usuarios (nombre, apellido, nombre_usuario, contrasenia, tipo_usuario, celular, foto, activo)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 1)
+  // ======= NUEVOS =======
+
+  buscarTodos = async () => {
+    const sql = `
+      SELECT u.usuario_id, u.nombre, u.apellido, u.nombre_usuario, u.tipo_usuario
+      FROM usuarios u
+      WHERE u.activo = 1
+      ORDER BY u.usuario_id DESC;
     `;
-        const [result] = await conexion.execute(sql, [
-            nombre ?? null,
-            apellido ?? null,
-            nombre_usuario ?? null,
-            contrasenia ?? null,
-            tipo_usuario ?? null,
-            celular ?? null,
-            foto ?? null
-        ]);
+    const [rows] = await conexion.query(sql);
+    return rows;
+  };
 
-        return {
-            usuario_id: result.insertId,
-            nombre,
-            apellido,
-            nombre_usuario,
-            tipo_usuario,
-            celular,
-            foto
-        };
-    };
+  crear = async (datos) => {
+    const { nombre, apellido, nombre_usuario, contrasenia, tipo_usuario } = datos;
 
-    // PUT /api/v1/usuarios/:usuario_id
-    editar = async (usuario_id, { nombre, apellido, nombre_usuario, contrasenia, tipo_usuario, celular, foto }) => {
-        const existente = await this.buscarPorId(usuario_id);
-        if (!existente) return null;
-
-        const sql = `
-        UPDATE usuarios
-        SET nombre = ?, apellido = ?, nombre_usuario = ?, contrasenia = ?, tipo_usuario = ?, celular = ?, foto = ?
-        WHERE usuario_id = ? AND activo = 1
+    const sql = `
+      INSERT INTO usuarios (nombre, apellido, nombre_usuario, contrasenia, tipo_usuario, activo)
+      VALUES (?, ?, ?, SHA2(?,256), ?, 1)
     `;
 
-        const valores = [
-            nombre ?? null,
-            apellido ?? null,
-            nombre_usuario ?? null,
-            contrasenia ?? null,
-            tipo_usuario ?? null,
-            celular ?? null,
-            foto ?? null,
-            usuario_id ?? null,
-        ];
+    const [r] = await conexion.execute(sql, [nombre, apellido, nombre_usuario, contrasenia, tipo_usuario]);
+    if (r.affectedRows === 0) return null;
+    return this.buscarPorId(r.insertId);
+  };
 
-        await conexion.execute(sql, valores);
+  modificar = async (usuario_id, datos) => {
+    const permitidos = ['nombre', 'apellido', 'nombre_usuario', 'contrasenia', 'tipo_usuario'];
 
-        return {
-            usuario_id: Number(usuario_id),
-            nombre,
-            apellido,
-            nombre_usuario,
-            tipo_usuario,
-            celular,
-            foto,
-        };
-    };
+    const campos = Object.keys(datos).filter(k => permitidos.includes(k));
+    if (campos.length === 0) return await this.buscarPorId(usuario_id);
 
-    // DELETE /api/v1/usuarios/:usuario_id (soft delete)
-    borrar = async (usuario_id) => {
-        const existente = await this.buscarPorId(usuario_id);
-        if (!existente) return false;
+    // SET dinámico con hash si viene 'contrasenia'
+    const parts = [];
+    const values = [];
+    for (const c of campos) {
+      if (c === 'contrasenia') {
+        parts.push(`contrasenia = SHA2(?,256)`);
+        values.push(datos[c]);
+      } else {
+        parts.push(`${c} = ?`);
+        values.push(datos[c]);
+      }
+    }
+    const setSql = parts.join(', ');
 
-        const sql = "UPDATE usuarios SET activo = 0 WHERE usuario_id = ?";
-        await conexion.execute(sql, [usuario_id]);
-        return true;
-    };
+    const [upd] = await conexion.execute(
+      `UPDATE usuarios SET ${setSql} WHERE usuario_id = ?`,
+      [...values, usuario_id]
+    );
+    if (upd.affectedRows === 0) return null;
+    return this.buscarPorId(usuario_id);
+  };
+
+  eliminar = async (usuario_id) => {
+    const [r] = await conexion.execute(
+      `UPDATE usuarios SET activo = 0 WHERE usuario_id = ?`,
+      [usuario_id]
+    );
+    return r.affectedRows > 0;
+  };
 }
+

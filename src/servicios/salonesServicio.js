@@ -1,26 +1,38 @@
 import Salones from "../db/salones.js";
 
 export default class SalonesServicio {
+
     constructor() {
         this.salones = new Salones();
     }
-    buscarTodos = async () => {
+
+    buscarTodos = () => {
         return this.salones.buscarTodos();
     }
 
-    buscarPorId = async (id) => {
-    return this.salones.buscarPorId(id);
-  }
+    buscarPorId = (salon_id) => {
+        return this.salones.buscarPorId(salon_id);
+    }
 
-  crear = async (data) => {
-    return this.salones.crear(data);
-  }
+    modificar = (salon_id, datos) => {
+        const existe = this.salones.buscarPorId(salon_id);
+        if (!existe) {
+            return null;
+        }
+        return this.salones.modificar(salon_id, datos);
+    }
 
-  editar = async (id, data) => {
-    return this.salones.editar(id, data);
-  }
+    crear = (salon) => {
+        return this.salones.crear(salon);
+    }
 
-  borrar = async (id) => {
-    return this.salones.borrar(id);
-  }  
+    // Eliminar un salón (borrado lógico)
+    eliminar = async (salon_id) => {
+        const existe = await this.salones.buscarPorId(salon_id);
+        if (!existe) {
+            return false;
+        }
+        return this.salones.eliminar(salon_id);
+    }
 }
+

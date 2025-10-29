@@ -1,52 +1,66 @@
-import {conexion} from "./conexion.js";
+import { conexion } from "./conexion.js";
 
-export default class salones {
-    buscarTodosSalonesCompletos = async () => {
-        const sql = 'SELECT * FROM salones WHERE activo=1';
-        const [results, fields] = await conexion.execute(sql);
-        return results; 
+export default class Salones {
+
+    buscarTodos = async () => {
+        const sql = 'SELECT * FROM salones WHERE activo = 1';
+        const [salones] = await conexion.execute(sql);
+        return salones;
     }
 
-    // GET /api/v1/salones
-  buscarTodos = async () => {
-    const sql = "SELECT salon_id, titulo, direccion, capacidad, importe FROM salones WHERE activo = 1";
-    const [rows] = await conexion.execute(sql);
-    return rows;
-  };
+    buscarPorId = async (salon_id) => {
+        const sql = 'SELECT * FROM salones WHERE activo = 1 AND salon_id = ?';
+        const [salon] = await conexion.execute(sql, [salon_id]);
 
-  // GET /api/v1/salones/:id
-  buscarPorId = async (id) => {
-    const sql = "SELECT salon_id, titulo, direccion, capacidad, importe FROM salones WHERE salon_id = ? AND activo = 1";
-    const [rows] = await conexion.execute(sql, [id]);
-    return rows[0] || null;
-  };
+        if (salon.length === 0) {
+            return null;
+        }
 
-  // POST /api/v1/salones
-  crear = async ({ titulo, direccion, capacidad, importe }) => {
-    const sql = "INSERT INTO salones (titulo, direccion, capacidad, importe) VALUES (?, ?, ?, ?)";
-    const [result] = await conexion.execute(sql, [titulo, direccion, capacidad, importe]);
-    return { salon_id: result.insertId, titulo, direccion, capacidad, importe };
-  };
+        return salon[0];
+    }
 
-  // PUT /api/v1/salones/:salon_id
-  editar = async (id, { titulo, direccion, capacidad, importe }) => {
-    // Verifico que el salón exista
-    const existente = await this.buscarPorId(id);
-    if (!existente) return null;
+    crear = async (salon) => {
+        const { titulo, direccion, capacidad, importe } = salon;
+        const sql = 'INSERT INTO salones (titulo, direccion, capacidad, importe) VALUES (?,?,?,?)';
+        const [result] = await conexion.execute(sql, [titulo, direccion, capacidad, importe]);
 
-    const sql = "UPDATE salones SET titulo = ?, direccion = ?, capacidad = ?, importe = ? WHERE salon_id = ?";
-    await conexion.execute(sql, [titulo, direccion, capacidad, importe, id]);
-    return { salon_id: Number(id), titulo, direccion, capacidad, importe };
-  };
+        if (result.affectedRows === 0) {
+            return null;
+        }
 
-  // DELETE /api/v1/salones/:salon_id (soft delete)
-  borrar = async (id) => {
-    const existente = await this.buscarPorId(id);
-    if (!existente) return false;
+        return this.buscarPorId(result.insertId);
+    }
 
-    const sql = "UPDATE salones SET activo = 0 WHERE salon_id = ?";
-    await conexion.execute(sql, [id]);
-    return true;
-  };
+    modificar = async (salon_id, datos) => {
+        const camposAActualizar = Object.keys(datos);
+        const valoresAActualizar = Object.values(datos);
+
+        const setValores = camposAActualizar.map(campo => `${campo} = ?`).join(', ');
+        const parametros = [...valoresAActualizar, salon_id];
+
+        const sql = `UPDATE salones SET ${setValores} WHERE salon_id = ?`;
+
+        const [result] = await conexion.execute(sql, parametros);
+
+        if (result.affectedRows === 0) {
+            return null;
+        }
+
+        return this.buscarPorId(salon_id);
+    }
+
+    // 👇 NUEVO MÉTODO eliminar (baja lógica)
+    eliminar = async (salon_id) => {
+        const sql = 'UPDATE salones SET activo = 0 WHERE salon_id = ?';
+        const [result] = await conexion.execute(sql, [salon_id]);
+
+        // Si no afectó filas, no encontró el salón
+        if (result.affectedRows === 0) {
+            return false;
+        }
+
+        return true;
+    }
 }
+
 

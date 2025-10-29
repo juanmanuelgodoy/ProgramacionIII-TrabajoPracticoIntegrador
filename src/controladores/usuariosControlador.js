@@ -1,91 +1,117 @@
 import UsuariosServicio from "../servicios/usuariosServicio.js";
 
 export default class UsuariosControlador {
-    constructor() {
-        this.usuariosServicio = new UsuariosServicio();
+  constructor() {
+    this.usuariosServicio = new UsuariosServicio();
+  }
+
+  // ==============================
+  // LISTAR TODOS (solo admin)
+  // ==============================
+  buscarTodos = async (req, res) => {
+    try {
+      const datos = await this.usuariosServicio.buscarTodos();
+      res.json({ estado: true, datos });
+    } catch (err) {
+      console.log("Error en GET /usuarios", err);
+      res.status(500).json({ estado: false, mensaje: "Error interno del servidor." });
     }
+  };
 
-    // GET /api/v1/usuarios
-    buscarTodos = async (req, res) => {
-        try {
-            const usuarios = await this.usuariosServicio.buscarTodos();
-            res.json({ estado: true, datos: usuarios });
-        } catch (err) {
-            console.log("Error con GET /usuarios", err);
-            res.status(500).json({ estado: false, mensaje: "Error interno del servidor." });
-        }
-    };
+  // ==============================
+  // BUSCAR POR ID (admin, empleado o cliente propio)
+  // ==============================
+  buscarPorId = async (req, res) => {
+    try {
+      const { usuario_id } = req.params;
+      const usuario = await this.usuariosServicio.buscarPorId(usuario_id, req.user);
 
-    // GET /api/v1/usuarios/:usuario_id
-    buscarPorId = async (req, res) => {
-        try {
-            const { usuario_id } = req.params;
-            const usuario = await this.usuariosServicio.buscarPorId(usuario_id);
-            if (!usuario)
-                return res.status(404).json({ estado: false, mensaje: "El usuario no existe." });
-            res.json({ estado: true, datos: usuario });
-        } catch (err) {
-            console.log("Error con GET /usuarios/:id", err);
-            res.status(500).json({ estado: false, mensaje: "Error interno del servidor." });
-        }
-    };
+      if (!usuario) {
+        return res
+          .status(404)
+          .json({ estado: false, mensaje: "Usuario no encontrado." });
+      }
 
-    // POST /api/v1/usuarios
-    crear = async (req, res) => {
-        try {
-            const { nombre, apellido, nombre_usuario, contrasenia, tipo_usuario } = req.body;
-            if (!nombre || !apellido || !nombre_usuario || !contrasenia || !tipo_usuario) {
-                return res.status(400).json({ estado: false, mensaje: "Faltan datos requeridos." });
-            }
-            const nuevo = await this.usuariosServicio.crear({
-                nombre,
-                apellido,
-                nombre_usuario,
-                contrasenia,
-                tipo_usuario,
-            });
-            res.status(201).json({ estado: true, mensaje: "Usuario creado.", datos: nuevo });
-        } catch (err) {
-            console.log("Error con POST /usuarios", err);
-            res.status(500).json({ estado: false, mensaje: "Error interno del servidor." });
-        }
-    };
+      res.json({ estado: true, usuario });
+    } catch (err) {
+      console.log("Error en GET /usuarios/:usuario_id", err);
+      res.status(500).json({ estado: false, mensaje: "Error interno del servidor." });
+    }
+  };
 
-    // PUT /api/v1/usuarios/:usuario_id
-    editar = async (req, res) => {
-        try {
-            const { usuario_id } = req.params;
-            const { nombre, apellido, nombre_usuario, contrasenia, tipo_usuario } = req.body;
-            if (!nombre || !apellido || !nombre_usuario || !contrasenia || !tipo_usuario) {
-                return res.status(400).json({ estado: false, mensaje: "Faltan datos requeridos." });
-            }
-            const actualizado = await this.usuariosServicio.editar(usuario_id, {
-                nombre,
-                apellido,
-                nombre_usuario,
-                contrasenia,
-                tipo_usuario,
-            });
-            if (!actualizado)
-                return res.status(404).json({ estado: false, mensaje: "El usuario no existe." });
-            res.json({ estado: true, mensaje: "Usuario actualizado.", datos: actualizado });
-        } catch (err) {
-            console.log("Error con PUT /usuarios/:usuario_id", err);
-            res.status(500).json({ estado: false, mensaje: "Error interno del servidor." });
-        }
-    };
+  // ==============================
+  // CREAR USUARIO (solo admin)
+  // ==============================
+  crear = async (req, res) => {
+    try {
+      const nuevo = await this.usuariosServicio.crear(req.body);
 
-    // DELETE /api/v1/usuarios/:usuario_id
-    borrar = async (req, res) => {
-        try {
-            const { usuario_id } = req.params;
-            const ok = await this.usuariosServicio.borrar(usuario_id);
-            if (!ok)
-                return res.status(404).json({ estado: false, mensaje: "El usuario no existe." });
-            res.json({ estado: true, mensaje: "Usuario eliminado." });
-        } catch (err) {
-            console.log("Error con DELETE /usuarios/:usuario_id", err);
-            res.status(500).json({ estado: false, mensaje: "Error interno del servidor." });
-        }
-    };
+      if (!nuevo) {
+        return res
+          .status(400)
+          .json({ estado: false, mensaje: "No se pudo crear el usuario." });
+      }
+
+      res.json({ estado: true, mensaje: "¡Usuario creado!", usuario: nuevo });
+    } catch (err) {
+      console.log("Error en POST /usuarios", err);
+      res.status(500).json({ estado: false, mensaje: "Error interno del servidor." });
+    }
+  };
+
+  // ==============================
+  // MODIFICAR USUARIO (solo admin)
+  // ==============================
+  modificar = async (req, res) => {
+    try {
+      const { usuario_id } = req.params;
+      const datos = req.body;
+
+      const modificado = await this.usuariosServicio.modificar(usuario_id, datos);
+
+      if (!modificado) {
+        return res
+          .status(404)
+          .json({ estado: false, mensaje: "Usuario no encontrado para ser modificado." });
+      }
+
+      res.json({
+        estado: true,
+        mensaje: "¡Usuario modificado!",
+        usuario: modificado,
+      });
+    } catch (err) {
+      console.log("Error en PUT /usuarios/:usuario_id =>", err?.code, err?.sqlMessage);
+      res.status(500).json({ estado: false, mensaje: "Error interno del servidor." });
+    }
+  };
+
+  // ==============================
+  // ELIMINAR USUARIO (solo admin)
+  // ==============================
+  eliminar = async (req, res) => {
+    try {
+      const { usuario_id } = req.params;
+      const ok = await this.usuariosServicio.eliminar(usuario_id);
+
+      if (ok === null) {
+        return res
+          .status(404)
+          .json({ estado: false, mensaje: "Usuario no encontrado." });
+      }
+
+      if (!ok) {
+        return res
+          .status(500)
+          .json({ estado: false, mensaje: "No se pudo eliminar el usuario." });
+      }
+
+      res.json({ estado: true, mensaje: "¡Usuario eliminado!" });
+    } catch (err) {
+      console.log("Error en DELETE /usuarios/:usuario_id =>", err?.code, err?.sqlMessage);
+      res.status(500).json({ estado: false, mensaje: "Error interno del servidor." });
+    }
+  };
 }
+
+
