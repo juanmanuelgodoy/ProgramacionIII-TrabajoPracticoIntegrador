@@ -165,7 +165,7 @@ export default class Reservas {
         `;
         const [rows] = await conexion.execute(sql);
 
-        // 🔎 LOG: qué admins hay en la DB
+        // LOG: qué admins hay en la DB
         console.log('[DB] ADMIN EN DB:', rows);
 
         return rows; // [{correoAdmin:"..."}, ...]
@@ -202,12 +202,12 @@ export default class Reservas {
             return null;
         }
 
-        // 🔎 LOG: qué datos de la reserva se van a usar
+        // LOG: qué datos de la reserva se van a usar
         console.log('[DB] DATOS NOTIF RESERVA:', rows[0]);
 
         const admins = await this.obtenerCorreosAdmins();
 
-        // 🔎 LOG: admins (por si viene vacío)
+        // LOG: admins (por si viene vacío)
         console.log('[DB] ADMIN EN DB (desde datosParaNotificacion):', admins);
 
         return {

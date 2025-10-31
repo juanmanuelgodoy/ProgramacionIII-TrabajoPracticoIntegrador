@@ -115,65 +115,49 @@ export default class UsuariosControlador {
     }
   };
 
-  // ==============================
-  // REINICIAR CONTRASEÑA (solo admin)
-  // ==============================
-  reiniciarContrasenia = async (req, res) => {
+
+  // POST /usuarios/reinicio/solicitar-mi-link  (autenticado)
+  solicitarReinicioParaMi = async (req, res) => {
     try {
-      const { usuario_id } = req.params;
-
-      // 1) Reiniciar en DB -> retorna la nueva contraseña (string) o null/false
-      const nuevaPass = await this.usuariosServicio.reiniciarContrasenia(usuario_id);
-
-      if (nuevaPass === null) {
-        return res.status(404).json({
-          estado: false,
-          mensaje: "Usuario no encontrado."
-        });
-      }
-
-      if (nuevaPass === false) {
-        return res.status(500).json({
-          estado: false,
-          mensaje: "No se pudo reiniciar la contraseña."
-        });
-      }
-
-      // 2) Buscar usuario para obtener nombre y correo (en tu DB es nombre_usuario)
-      const usuario = await this.usuariosServicio.buscarPorId(usuario_id, req.user);
-      if (!usuario) {
-        // Si por algún motivo no vuelve, informamos igual el reinicio
-        console.warn("[REINICIO] Contraseña reiniciada pero no se pudo cargar el usuario para enviar email.");
-        return res.json({
-          estado: true,
-          mensaje: "Contraseña reiniciada. (No se pudo enviar email por falta de datos del usuario)."
-        });
-      }
-
-      // 3) Enviar email (no cortamos el flujo si falla el envío)
-      try {
-        await this.notificacionesService.enviarCorreoReinicio({
-          usuario,       // debe tener nombre, apellido y nombre_usuario
-          nuevaPass
-        });
-      } catch (mailErr) {
-        console.error("[REINICIO] Falló envío de email:", mailErr?.message);
-        // Respondemos 200 igualmente porque la contraseña sí se reinició
-        return res.json({
-          estado: true,
-          mensaje: "Contraseña reiniciada. (Falló el envío de email)."
-        });
-      }
-
-      // 4) OK total
-      res.json({
+      const usuarioId = req.user?.uid;
+      console.log("[CTRL reinicio/solicitar-mi-link] uid en JWT:", usuarioId, "tipo:", req.user?.tipo_usuario);
+      await this.usuariosServicio.generarYEnviarLinkReinicioParaUsuario(usuarioId);
+      return res.json({
         estado: true,
-        mensaje: "Contraseña reiniciada. Se envió email al usuario."
+        mensaje:
+          "Si tu correo está configurado, vas a recibir un enlace para restablecer la contraseña.",
       });
-
     } catch (err) {
-      console.log("Error en PUT /usuarios/:usuario_id/reset =>", err?.code, err?.sqlMessage || err?.message);
-      res.status(500).json({ estado: false, mensaje: "Error interno del servidor." });
+      console.error("[reinicio/solicitar-mi-link] ERROR:", err?.message);
+      return res
+        .status(500)
+        .json({ estado: false, mensaje: "Error procesando la solicitud." });
+    }
+  };
+
+  // POST /usuarios/reinicio/confirmar  (público)
+  confirmarReinicio = async (req, res) => {
+    try {
+      const { token, nueva_contrasenia } = req.body;
+      const ok = await this.usuariosServicio.cambiarContraseniaConToken(
+        token,
+        nueva_contrasenia
+      );
+      if (!ok) {
+        return res.status(400).json({
+          estado: false,
+          mensaje: "Token inválido, vencido o ya utilizado.",
+        });
+      }
+      return res.json({
+        estado: true,
+        mensaje: "Tu contraseña fue actualizada correctamente.",
+      });
+    } catch (err) {
+      console.error("[reinicio/confirmar] ERROR:", err?.message);
+      return res
+        .status(500)
+        .json({ estado: false, mensaje: "Error procesando el cambio." });
     }
   };
 }

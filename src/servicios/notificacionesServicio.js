@@ -125,47 +125,56 @@ export default class NotificacionesService {
     }
   }
 
-  // ------------------------------------------------------------
-  // Email al usuario cuando se reinicia su contraseña
-  // ------------------------------------------------------------
-  enviarCorreoReinicio = async (payload) => {
-    try {
-      const { usuario, nuevaPass } = payload || {};
-
-      // En la DB el correo es nombre_usuario
-      const destino = usuario?.nombre_usuario || '';
-
-      if (!destino) {
-        console.warn('[MAIL->REINICIO] El usuario no tiene correo cargado.');
-        return false;
-      }
-
-      const html = this.template({
-        titulo: 'Reinicio de contraseña',
-        saludo: `Hola ${usuario?.nombre},`,
-        cuerpo: 'Tu contraseña ha sido restablecida por un administrador.',
-        fecha: '',
-        salon: '',
-        turno: '',
-        nombre: `${usuario?.nombre} ${usuario?.apellido}`,
-        pie: `Tu nueva contraseña temporal es: ${nuevaPass}`
-      });
-
-      const mailOptions = {
-        from: this.mailUser,
-        to: destino,
-        subject: 'Tu contraseña fue reiniciada',
-        html
-      };
-
-      const info = await this.transporter.sendMail(mailOptions);
-      console.log('[MAIL->REINICIO] Enviado:', info?.messageId);
-      return true;
-
-    } catch (err) {
-      console.error('[MAIL->REINICIO] ERROR:', err?.message);
+// ------------------------------------------------------------
+// Email con link temporal de reinicio de contraseña (con logs)
+// ------------------------------------------------------------
+enviarCorreoResetLink = async ({ destino, url, minutos = 60 }) => {
+  try {
+    if (!destino) {
+      console.warn("[MAIL->RESET LINK] Falta destino.");
       return false;
     }
+
+    // Logs previos al envío (útiles para depurar)
+    console.log("[MAIL->RESET LINK] Preparando envío…");
+    console.log("[MAIL->RESET LINK] From:", this.mailUser);
+    console.log("[MAIL->RESET LINK] To:", destino);
+    console.log("[MAIL->RESET LINK] URL:", url);
+    console.log("[MAIL->RESET LINK] Expira en (min):", minutos);
+
+    const html = this.template({
+      titulo: "Restablecé tu contraseña",
+      saludo: "Hola,",
+      cuerpo:
+        "Recibimos una solicitud para restablecer tu contraseña. Hacé clic en el botón para crear una nueva contraseña.",
+      boton_url: url,                 // activa el botón en plantilla.hbs
+      boton_texto: "Crear nueva contraseña",
+      nombre: "",
+      pie: `El enlace vence en ${minutos} minutos.`,
+      fecha: "",
+      salon: "",
+      turno: "",
+    });
+
+    const mailOptions = {
+      from: this.mailUser,
+      to: destino,
+      subject: "Restablecé tu contraseña",
+      html,
+    };
+
+    console.log("[MAIL->RESET LINK] Enviando correo…");
+    const info = await this.transporter.sendMail(mailOptions);
+
+    console.log("[MAIL->RESET LINK] Enviado OK. messageId:", info?.messageId);
+    console.log("[MAIL->RESET LINK] Accepted:", info?.accepted);
+    console.log("[MAIL->RESET LINK] Rejected:", info?.rejected);
+
+    return true;
+  } catch (err) {
+    console.error("[MAIL->RESET LINK] ERROR:", err?.message);
+    return false;
   }
+}
 }
 

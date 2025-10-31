@@ -25,16 +25,60 @@ export default class Usuarios {
     return result[0];
   };
 
-  // === Reiniciar contraseña ===
-  reiniciarContrasenia = async (usuario_id, nuevaPlano = "Prog3DW") => {
+// Actualizar contraseña (hash en MySQL)
+  actualizarContrasenia = async (usuario_id, nuevaPlano) => {
     const sql = `
       UPDATE usuarios
       SET contrasenia = SHA2(?, 256), modificado = NOW()
       WHERE usuario_id = ? AND activo = 1
     `;
-
-    const [result] = await conexion.query(sql, [nuevaPlano, usuario_id]);
+    const [result] = await conexion.execute(sql, [nuevaPlano, usuario_id]);
     return result.affectedRows > 0;
+  };
+
+  // ─────────────── Tokens de reinicio ───────────────
+
+  crearResetToken = async ({ usuario_id, token_hash, expira_en }) => {
+    const sql = `
+      INSERT INTO usuarios_resets (usuario_id, token_hash, expira_en, usado)
+      VALUES (?, ?, ?, 0)
+    `;
+    const [result] = await conexion.execute(sql, [
+      usuario_id,
+      token_hash,
+      expira_en,
+    ]);
+    return result.insertId;
+  };
+
+  buscarResetPorTokenHash = async (token_hash) => {
+    const sql = `
+      SELECT reset_id, usuario_id, expira_en, usado
+      FROM usuarios_resets
+      WHERE token_hash = ?
+      LIMIT 1
+    `;
+    const [rows] = await conexion.execute(sql, [token_hash]);
+    return rows[0] || null;
+  };
+
+  marcarResetComoUsado = async (reset_id) => {
+    const sql = `
+      UPDATE usuarios_resets
+      SET usado = 1
+      WHERE reset_id = ?
+    `;
+    const [result] = await conexion.execute(sql, [reset_id]);
+    return result.affectedRows > 0;
+  };
+
+  invalidarTokensUsuario = async (usuario_id) => {
+    const sql = `
+      UPDATE usuarios_resets
+      SET usado = 1
+      WHERE usuario_id = ? AND usado = 0
+    `;
+    await conexion.execute(sql, [usuario_id]);
   };
 
   buscarTodos = async () => {
