@@ -25,15 +25,25 @@ export default class Usuarios {
     return result[0];
   };
 
-// Actualizar contraseña (hash en MySQL)
-  actualizarContrasenia = async (usuario_id, nuevaPlano) => {
-    const sql = `
-      UPDATE usuarios
-      SET contrasenia = SHA2(?, 256), modificado = NOW()
-      WHERE usuario_id = ? AND activo = 1
-    `;
-    const [result] = await conexion.execute(sql, [nuevaPlano, usuario_id]);
-    return result.affectedRows > 0;
+// Actualizar contraseña → siempre guarda SHA256
+  actualizarContrasenia = async (usuario_id, nuevaContrasenia) => {
+    const [r] = await conexion.query(
+      "UPDATE usuarios SET contrasenia = SHA2(?,256) WHERE usuario_id = ?",
+      [nuevaContrasenia, usuario_id]
+    );
+    return r.affectedRows === 1;
+  };
+
+  // Cambio atómico: valida actual y setea nueva
+  cambiarConContraseniaActual = async (usuario_id, actual, nueva) => {
+    const [r] = await conexion.query(
+      `UPDATE usuarios
+          SET contrasenia = SHA2(?,256)
+        WHERE usuario_id = ?
+          AND contrasenia = SHA2(?,256)`,
+      [nueva, usuario_id, actual]
+    );
+    return r.affectedRows === 1;
   };
 
   // ─────────────── Tokens de reinicio ───────────────

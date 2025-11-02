@@ -1,22 +1,12 @@
-import crypto from "crypto";
 import Usuarios from "../db/usuarios.js";
 import NotificacionesService from "./notificacionesServicio.js";
-
-const TOKEN_MINUTOS = 60; // duración del enlace
-const APP_URL = process.env.APP_URL || "http://localhost:3000";
+import crypto from "crypto";
 
 export default class UsuariosServicio {
   constructor() {
     this.usuarios = new Usuarios();
     this.notificaciones = new NotificacionesService(); // para enviar emails
   }
-
-  // =========================
-  // Login (lo que ya usabas)
-  // =========================
-  buscar = (nombre_usuario, contrasenia) => {
-    return this.usuarios.buscar(nombre_usuario, contrasenia);
-  };
 
   // =========================
   // LISTAR TODOS (ADMIN)
@@ -31,10 +21,7 @@ export default class UsuariosServicio {
   buscarPorId = async (usuario_id, usuarioActual = null) => {
     const u = await this.usuarios.buscarPorId(usuario_id);
     if (!u) return null;
-
-    // Si querés bloquear que un cliente vea a otro, descomenta:
-    // if (usuarioActual?.tipo_usuario === 3 && Number(usuario_id) !== usuarioActual.usuario_id) return null;
-
+    // acá podrías validar contra usuarioActual si querés restringir a clientes
     return u;
   };
 
@@ -59,68 +46,54 @@ export default class UsuariosServicio {
   // =========================
   eliminar = async (usuario_id) => {
     const existe = await this.usuarios.buscarPorId(usuario_id);
-    if (!existe) return null; // 404
+    if (!existe) return null;
     const ok = await this.usuarios.eliminar(usuario_id);
     return ok; // true/false
   };
 
-  // ==========================================================
-  // AUTENTICADO: generar y enviar link de reinicio para mí
-  // ==========================================================
-  generarYEnviarLinkReinicioParaUsuario = async (usuario_id) => {
-    console.log("[SRV generarYEnviarLink] usuario_id recibido:", usuario_id);
-    const usuario = await this.usuarios.buscarPorId(usuario_id);
-    console.log("[SRV generarYEnviarLink] usuario encontrado:", usuario?.usuario_id, usuario?.nombre_usuario);
-    if (!usuario) {
-    console.warn("[SRV generarYEnviarLink] NO existe el usuario_id:", usuario_id);
-    return true;
-  }
+  // =========================
+  // GENERAR CONTRASEÑA TEMPORAL (sin TMP, sin cambios de BD)
+  // =========================
+  emitirContraseniaTemporal = async (usuario_id) => {
+    const u = await this.usuarios.buscarPorId(usuario_id);
+    if (!u) return false;
 
-  return this.#generarTokenYEnviar(usuario.usuario_id, usuario.nombre_usuario);
-};
+    // temporal legible de 10 caracteres
+    const temporal = "Prog3DW"
 
-  // ===========================================
-  // Confirmar cambio de contraseña con token
-  // ===========================================
-  cambiarContraseniaConToken = async (tokenPlano, nuevaPlano) => {
-    if (!tokenPlano || !nuevaPlano) return false;
-
-    const tokenHash = crypto.createHash("sha256").update(tokenPlano).digest();
-    const reset = await this.usuarios.buscarResetPorTokenHash(tokenHash);
-    if (!reset) return false;
-
-    const ahora = new Date();
-    const expira = new Date(reset.expira_en);
-    if (reset.usado || expira < ahora) return false;
-
-    const ok = await this.usuarios.actualizarContrasenia(reset.usuario_id, nuevaPlano);
+    // guarda SHA2(temporal) en DB
+    const ok = await this.usuarios.actualizarContrasenia(usuario_id, temporal);
     if (!ok) return false;
 
-    await this.usuarios.marcarResetComoUsado(reset.reset_id);
+    // envía email con la temporal
+    await this.notificaciones.enviarCorreoConContraseniaTemporal({
+      destino: u.nombre_usuario, // ajusta si tu campo email se llama distinto
+      contraseniaTemporal: temporal,
+    });
+
     return true;
   };
 
-  // ===========================================
-  // Privado: genera token, persiste y envía mail
-  // ===========================================
-#generarTokenYEnviar = async (usuario_id, emailDestino) => {
-  console.log("[SRV generarToken] Generando token para:", usuario_id, "destino:", emailDestino);
+  // =========================
+  // CAMBIAR CONTRASEÑA DEFINITIVA (logueado)
+  // =========================
+  cambiarContraseniaDefinitiva = async (usuario_id, actual, nueva) => {
+    if (!actual || !nueva) return false;
+    // cambio atómico: valida actual y setea nueva (ambas SHA2 en SQL)
+    return this.usuarios.cambiarConContraseniaActual(usuario_id, actual, nueva);
+  };
 
-  const token = crypto.randomBytes(32).toString("hex");
-  const tokenHash = crypto.createHash("sha256").update(token).digest();
-  const expira = new Date(Date.now() + TOKEN_MINUTOS * 60 * 1000);
+  // =========================
+  // LOGIN (usado por AuthControlador) — SIN TMP
+  // =========================
+  buscar = async (nombre_usuario, contrasenia) => {
+    // usa el método que ya tenés en db/usuarios.js (valida SHA2 en SQL)
+    const u = await this.usuarios.buscar(nombre_usuario, contrasenia);
+    if (!u) return null;
 
-  await this.usuarios.invalidarTokensUsuario(usuario_id);
-  await this.usuarios.crearResetToken({ usuario_id, token_hash: tokenHash, expira_en: expira });
-
-  const url = `${APP_URL}/reset-password.html?token=${token}`;
-  console.log("[SRV generarToken] URL generada:", url);
-
-  try {
-    await this.notificaciones.enviarCorreoResetLink({ destino: emailDestino, url, minutos: TOKEN_MINUTOS });
-  } catch (e) {
-    console.warn("[RESET] Envío de correo falló:", e?.message);
-  }
-  return true;
-};
+    // compatibilidad con tu front (si mostrás esta bandera)
+    u.must_change_password = false;
+    return u;
+  };
 }
+
