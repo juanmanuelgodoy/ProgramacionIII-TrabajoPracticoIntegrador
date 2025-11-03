@@ -53,22 +53,39 @@ export default class InformeReservasServicio {
     const csvWriter = createObjectCsvWriter({
       path: filePath,
       header: [
-        { id: "fecha_reserva",      title: "fecha_reserva" },
-        { id: "cantidad_reservas",  title: "cantidad_reservas" },
-        { id: "suma_importe_total", title: "suma_importe_total" },
+        { id: "fecha_reserva", title: "Fecha de la reserva" },
+        { id: "cantidad_reservas", title: "Cantidad" },
+        { id: "importe_total", title: "Importe total" },
       ],
       fieldDelimiter: ",",
       alwaysQuote: false,
       encoding: "utf8",
+      appendBOM: true,
     });
 
     const registros = Array.isArray(datos) ? datos.length : 0;
 
     await csvWriter.writeRecords(
       (datos || []).map((r) => ({
-        fecha_reserva: r.fecha_reserva,
+        fecha_reserva: r.fecha_reserva
+          ? new Date(r.fecha_reserva).toLocaleDateString('es-AR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+          })
+          : '',
         cantidad_reservas: r.cantidad_reservas ?? 0,
-        suma_importe_total: r.suma_importe_total ?? 0,
+        importe_total:
+          r.importe_total != null
+            ? new Intl.NumberFormat('es-AR', {
+              style: 'currency',
+              currency: 'ARS',
+              currencyDisplay: 'narrowSymbol',
+              minimumFractionDigits: 2,
+            })
+              .format(Number(r.importe_total))
+              .replace(/\u00A0/g, '')
+            : '$0,00',
       }))
     );
 

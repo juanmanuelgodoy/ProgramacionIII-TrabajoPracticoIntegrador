@@ -29,25 +29,38 @@ export default class ReporteReservasServicio {
     return `reporte_reservas_${desde}_a_${hasta}_${ts}.pdf`;
   }
 
-  construirHTML(desde, hasta, data) {
-    const fmt = new Intl.NumberFormat("es-AR", { minimumFractionDigits: 2 });
+construirHTML(desde, hasta, data) {
+  const fmt = new Intl.NumberFormat("es-AR", { minimumFractionDigits: 2 });
 
-    const filas = data.map(r => `
-      <tr>
-        <td>${r.reserva_id}</td>
-        <td>${r.fecha_reserva}</td>
-        <td>${r.salon_nombre}</td>
-        <td>${r.cliente_nombre} ${r.cliente_apellido}</td>
-        <td>${r.turno_horario}</td>
-        <td>${r.tematica}</td>
-        <td>${r.servicios || "Sin servicios"}</td>
-        <td class="num">${fmt.format(r.importe_salon)}</td>
-        <td class="num">${fmt.format(r.total_servicios || 0)}</td>
-        <td class="num">${fmt.format(r.importe_total)}</td>
-      </tr>
-    `).join("");
+  const formatoFechaLocal = (fechaStr) => {
+    if (!fechaStr) return '';
+    const f = new Date(fechaStr + 'T00:00:00');
+    return f.toLocaleDateString('es-AR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  };
 
-    return `
+  const filas = data.map(r => `
+    <tr>
+      <td>${r.reserva_id}</td>
+      <td>${r.fecha_reserva.toLocaleDateString('es-AR')}</td>
+      <td>${r.salon_titulo}</td>  
+      <td>${r.usuario_nombre} ${r.usuario_apellido}</td>
+      <td>${r.turno_hora_desde} ${r.turno_hora_hasta}</td>
+      <td>${r.tematica}</td>
+      <td>${r.descripcion || "Sin servicios"}</td>
+      <td class="num">${fmt.format(r.importe_salon)}</td>
+      <td class="num">${fmt.format(r.importe || 0)}</td>
+      <td class="num">${fmt.format(r.importe_total)}</td>
+    </tr>
+  `).join("");
+
+  const desdeFmt = formatoFechaLocal(desde);
+  const hastaFmt = formatoFechaLocal(hasta);
+
+  return `
 <!DOCTYPE html>
 <html>
 <head>
@@ -65,7 +78,7 @@ export default class ReporteReservasServicio {
 <body>
 
 <h1>Reporte de Reservas</h1>
-<p><strong>Período:</strong> ${desde} a ${hasta}</p>
+<p><strong>Período:</strong> ${desdeFmt} a ${hastaFmt}</p>
 
 <table>
   <thead>
@@ -89,7 +102,7 @@ export default class ReporteReservasServicio {
 
 </body>
 </html>`;
-  }
+}
 
   async generarPDF(desde, hasta) {
     const datos = await this.obtenerDatos(desde, hasta);
