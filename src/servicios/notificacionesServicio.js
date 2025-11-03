@@ -125,56 +125,35 @@ export default class NotificacionesService {
     }
   }
 
-// ------------------------------------------------------------
-// Email con link temporal de reinicio de contraseña (con logs)
-// ------------------------------------------------------------
-enviarCorreoResetLink = async ({ destino, url, minutos = 60 }) => {
+// === Enviar correo con contraseña temporal ===
+enviarCorreoConContraseniaTemporal = async ({ destino, contraseniaTemporal }) => {
   try {
-    if (!destino) {
-      console.warn("[MAIL->RESET LINK] Falta destino.");
-      return false;
-    }
+    if (!destino) return false;
 
-    // Logs previos al envío (útiles para depurar)
-    console.log("[MAIL->RESET LINK] Preparando envío…");
-    console.log("[MAIL->RESET LINK] From:", this.mailUser);
-    console.log("[MAIL->RESET LINK] To:", destino);
-    console.log("[MAIL->RESET LINK] URL:", url);
-    console.log("[MAIL->RESET LINK] Expira en (min):", minutos);
+    // Si no te pasan una, usa la fija que querés:
+    const pass = contraseniaTemporal ?? "Prog3DW";
 
     const html = this.template({
-      titulo: "Restablecé tu contraseña",
+      // Cabecera
+      titulo: "Contraseña temporal para ingresar",
       saludo: "Hola,",
       cuerpo:
-        "Recibimos una solicitud para restablecer tu contraseña. Hacé clic en el botón para crear una nueva contraseña.",
-      boton_url: url,                 // activa el botón en plantilla.hbs
-      boton_texto: "Crear nueva contraseña",
-      nombre: "",
-      pie: `El enlace vence en ${minutos} minutos.`,
-      fecha: "",
-      salon: "",
-      turno: "",
+        "Generamos una contraseña temporal para que puedas ingresar y luego cambiarla desde tu perfil.",
+      contrasenia_temporal: pass,
+      pie: "Enviado por Grupo AX",
     });
-
-    const mailOptions = {
+    await this.transporter.sendMail({
       from: this.mailUser,
       to: destino,
-      subject: "Restablecé tu contraseña",
+      subject: "Tu contraseña temporal",
       html,
-    };
-
-    console.log("[MAIL->RESET LINK] Enviando correo…");
-    const info = await this.transporter.sendMail(mailOptions);
-
-    console.log("[MAIL->RESET LINK] Enviado OK. messageId:", info?.messageId);
-    console.log("[MAIL->RESET LINK] Accepted:", info?.accepted);
-    console.log("[MAIL->RESET LINK] Rejected:", info?.rejected);
+    });
 
     return true;
-  } catch (err) {
-    console.error("[MAIL->RESET LINK] ERROR:", err?.message);
+  } catch (error) {
+    console.error("[MAIL TEMPORAL] ERROR:", error?.message);
     return false;
   }
-}
+};
 }
 

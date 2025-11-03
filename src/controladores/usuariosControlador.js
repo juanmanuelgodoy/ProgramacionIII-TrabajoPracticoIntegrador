@@ -116,48 +116,70 @@ export default class UsuariosControlador {
   };
 
 
-  // POST /usuarios/reinicio/solicitar-mi-link  (autenticado)
+// ======================================================
+  // POST /usuarios/reinicio/solicitar-mi-link
+  // (El usuario logueado solicita recibir una contraseña temporal)
+  // ======================================================
   solicitarReinicioParaMi = async (req, res) => {
     try {
       const usuarioId = req.user?.uid;
-      console.log("[CTRL reinicio/solicitar-mi-link] uid en JWT:", usuarioId, "tipo:", req.user?.tipo_usuario);
-      await this.usuariosServicio.generarYEnviarLinkReinicioParaUsuario(usuarioId);
+
+      await this.usuariosServicio.emitirContraseniaTemporal(usuarioId);
+
       return res.json({
         estado: true,
-        mensaje:
-          "Si tu correo está configurado, vas a recibir un enlace para restablecer la contraseña.",
+        mensaje: "Si tu correo está registrado, recibirás una contraseña temporal.",
       });
-    } catch (err) {
-      console.error("[reinicio/solicitar-mi-link] ERROR:", err?.message);
-      return res
-        .status(500)
-        .json({ estado: false, mensaje: "Error procesando la solicitud." });
+    } catch (error) {
+      console.error("[solicitarReinicioParaMi] ERROR:", error?.message);
+      return res.status(500).json({
+        estado: false,
+        mensaje: "Error procesando la solicitud.",
+      });
     }
   };
 
-  // POST /usuarios/reinicio/confirmar  (público)
-  confirmarReinicio = async (req, res) => {
+  // ======================================================
+  // PUT /usuarios/cambiar-contrasenia
+  // (El usuario logueado cambia su contraseña)
+  // ======================================================
+  cambiarContraseniaDefinitiva = async (req, res) => {
     try {
-      const { token, nueva_contrasenia } = req.body;
-      const ok = await this.usuariosServicio.cambiarContraseniaConToken(
-        token,
+      const usuarioId = req.user?.uid;
+      const { actual_contrasenia, nueva_contrasenia } = req.body;
+
+      // Validación simple
+      if (!nueva_contrasenia || nueva_contrasenia.length < 6) {
+        return res.status(400).json({
+          estado: false,
+          mensaje: "La contraseña debe tener al menos 6 caracteres.",
+        });
+      }
+
+      const ok = await this.usuariosServicio.cambiarContraseniaDefinitiva(
+        usuarioId,
+        actual_contrasenia,
         nueva_contrasenia
       );
+
       if (!ok) {
         return res.status(400).json({
           estado: false,
-          mensaje: "Token inválido, vencido o ya utilizado.",
+          mensaje:
+            "No se pudo actualizar. Verificá tu contraseña actual o si estás usando una temporal.",
         });
       }
+
       return res.json({
         estado: true,
-        mensaje: "Tu contraseña fue actualizada correctamente.",
+        mensaje: "Contraseña actualizada correctamente.",
       });
-    } catch (err) {
-      console.error("[reinicio/confirmar] ERROR:", err?.message);
-      return res
-        .status(500)
-        .json({ estado: false, mensaje: "Error procesando el cambio." });
+    } catch (e) {
+      console.error("[cambiarContrasenia] ERROR:", e?.message);
+      return res.status(500).json({
+        estado: false,
+        mensaje: "Error interno.",
+      });
     }
   };
 }

@@ -148,43 +148,158 @@ router.delete("/:usuario_id", autorizarUsuarios([1]), ctrl.eliminar);
  *       200:
  *         description: Email enviado si el flujo está habilitado
  */
+
+
+
+
+// ======================================================
+// Reinicio: contraseña temporal → usuario logueado
+// POST /usuarios/reinicio/solicitar-mi-link
+// ======================================================
+
+
+/**
+ * @swagger
+ * /api/usuarios/reinicio/solicitar-mi-link:
+ *   post:
+ *     summary: Solicitar envío de una contraseña temporal
+ *     description: |
+ *       El usuario autenticado solicita recibir una **contraseña temporal** por email.  
+ *       La contraseña temporal permite ingresar al sistema y luego debe cambiarse desde el perfil.
+ *
+ *     tags:
+ *       - Usuarios
+ *
+ *     security:
+ *       - bearerAuth: []
+ *
+ *     responses:
+ *       200:
+ *         description: Contraseña temporal enviada (si el correo está asociado al usuario).
+ *         content:
+ *           application/json:
+ *             example:
+ *               estado: true
+ *               mensaje: "Si tu correo está registrado, recibirás una contraseña temporal."
+ *
+ *       401:
+ *         description: Token inválido o expirado.
+ *         content:
+ *           application/json:
+ *             example:
+ *               estado: false
+ *               mensaje: "No autorizado."
+ *
+ *       500:
+ *         description: Error del servidor.
+ *         content:
+ *           application/json:
+ *             example:
+ *               estado: false
+ *               mensaje: "Error procesando la solicitud."
+ */
+
 router.post(
   "/reinicio/solicitar-mi-link",
   autorizarUsuarios([1, 2, 3]),
   ctrl.solicitarReinicioParaMi
 );
 
+// ======================================================
+// Cambio de contraseña definitiva
+// PUT /usuarios/cambiar-contrasenia
+// ======================================================
+
 /**
  * @swagger
- * /api/v1/usuarios/reinicio/confirmar:
- *   post:
- *     summary: Confirmar reinicio con token (público)
- *     tags: [Usuarios]
- *     security: []  # público
+ * /api/usuarios/cambiar-contrasenia:
+ *   put:
+ *     summary: Cambiar contraseña definitiva
+ *     description: |
+ *       Permite a un usuario **logueado** cambiar su contraseña.  
+ *       - Debe indicar la contraseña actual.  
+ *       - La nueva contraseña debe tener al menos **6 caracteres**.  
+ *       - Funciona tanto si previamente entró con una temporal como con una normal.
+ *
+ *     tags:
+ *       - Usuarios
+ *
+ *     security:
+ *       - bearerAuth: []
+ *
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
- *             required: [token, nueva_contrasenia]
+ *             required:
+ *               - actual_contrasenia
+ *               - nueva_contrasenia
  *             properties:
- *               token: { type: string, example: "eyJhbGciOi..." }
- *               nueva_contrasenia: { type: string, example: "nueva123" }
+ *               actual_contrasenia:
+ *                 type: string
+ *                 description: Contraseña actual del usuario.
+ *                 example: "MiClaveActual123"
+ *               nueva_contrasenia:
+ *                 type: string
+ *                 description: Nueva contraseña (mínimo 6 caracteres).
+ *                 example: "MiClaveNueva456"
+ *
  *     responses:
  *       200:
- *         description: Contraseña actualizada
+ *         description: Contraseña actualizada correctamente.
+ *         content:
+ *           application/json:
+ *             example:
+ *               estado: true
+ *               mensaje: "Contraseña actualizada correctamente."
+ *
+ *       400:
+ *         description: Contraseña actual incorrecta o nueva contraseña inválida.
+ *         content:
+ *           application/json:
+ *             examples:
+ *               claveActualIncorrecta:
+ *                 summary: Contraseña actual incorrecta
+ *                 value:
+ *                   estado: false
+ *                   mensaje: "No se pudo actualizar. Verificá tu contraseña actual o si estás usando una temporal."
+ *               claveNuevaMuyCorta:
+ *                 summary: Nueva contraseña muy corta
+ *                 value:
+ *                   estado: false
+ *                   mensaje: "La contraseña debe tener al menos 6 caracteres."
+ *
+ *       401:
+ *         description: Token inválido o faltante.
+ *         content:
+ *           application/json:
+ *             example:
+ *               estado: false
+ *               mensaje: "No autorizado."
+ *
+ *       500:
+ *         description: Error interno del servidor.
+ *         content:
+ *           application/json:
+ *             example:
+ *               estado: false
+ *               mensaje: "Error interno."
  */
-router.post(
-  "/reinicio/confirmar",
-  [
-    check("token").notEmpty().withMessage("Falta token."),
-    check("nueva_contrasenia")
-      .isLength({ min: 6 })
-      .withMessage("La contraseña debe tener al menos 6 caracteres."),
-    validarCampos,
-  ],
-  ctrl.confirmarReinicio
+
+router.put(
+  "/cambiar-contrasenia",
+  (req, res, next) => {                         // DEBUG 1
+    console.log("Auth header:", req.headers.authorization);
+    next();
+  },
+  autorizarUsuarios([1, 2, 3]),                 // usa req.user que setea tu validación global
+  (req, res, next) => {                         // DEBUG 2
+    console.log("req.user después de JWT:", req.user);
+    next();
+  },
+  ctrl.cambiarContraseniaDefinitiva             // sin paréntesis
 );
 
 export { router };
