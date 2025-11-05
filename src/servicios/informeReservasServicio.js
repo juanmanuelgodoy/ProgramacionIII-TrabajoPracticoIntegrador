@@ -17,13 +17,10 @@ export default class InformeReservasServicio {
     }
   }
 
-  /** Llama al SP y devuelve array de filas */
   async obtenerDatos(desde, hasta) {
     console.log("[informereservas] llamando SP sp_informe_reservas:", { desde, hasta });
     const [rows, fields] = await conexion.query("CALL sp_informe_reservas(?, ?)", [desde, hasta]);
 
-    // Distintos MariaDB/mysql2 pueden devolver formas diferentes con CALL.
-    // Normalmente rows[0] es la 1ª tabla (array de filas).
     let datos = [];
     if (Array.isArray(rows)) {
       if (Array.isArray(rows[0])) {
@@ -54,7 +51,7 @@ export default class InformeReservasServicio {
       path: filePath,
       header: [
         { id: "fecha_reserva", title: "Fecha de la reserva" },
-        { id: "cantidad_reservas", title: "Cantidad" },
+        { id: "cantidad_reservas", title: "Cantidad diaria de reservas" },
         { id: "importe_total", title: "Importe total" },
       ],
       fieldDelimiter: ",",

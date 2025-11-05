@@ -38,11 +38,11 @@ export default class InformeServiciosServicio {
     const csvWriter = createObjectCsvWriter({
       path: filePath,
       header: [
-        { id: "descripcion",        title: "descripcion" },
-        { id: "importe",            title: "importe" },
-        { id: "cantidad_reservas",  title: "cantidad_reservas" },
+        { id: "descripcion", title: "Descripcion" },
+        { id: "importe", title: "Importe" },
+        { id: "cantidad_reservas", title: "Cantidad de reservas de este servicio" },
       ],
-      fieldDelimiter: ",",    
+      fieldDelimiter: ",",
       alwaysQuote: false,
       encoding: "utf8",
     });

@@ -17,7 +17,7 @@ export default class Usuarios {
   buscarPorId = async (usuario_id) => {
     const sql = `
       SELECT u.usuario_id, u.tipo_usuario, u.nombre, u.apellido, u.nombre_usuario,
-             CONCAT(u.nombre, ' ', u.apellido) AS usuario
+      CONCAT(u.nombre, ' ', u.apellido) AS usuario
       FROM usuarios u
       WHERE u.usuario_id = ? AND u.activo = 1;
     `;
@@ -25,7 +25,6 @@ export default class Usuarios {
     return result[0];
   };
 
-// Actualizar contraseña → siempre guarda SHA256
   actualizarContrasenia = async (usuario_id, nuevaContrasenia) => {
     const [r] = await conexion.query(
       "UPDATE usuarios SET contrasenia = SHA2(?,256) WHERE usuario_id = ?",
@@ -34,7 +33,6 @@ export default class Usuarios {
     return r.affectedRows === 1;
   };
 
-  // Cambio atómico: valida actual y setea nueva
   cambiarConContraseniaActual = async (usuario_id, actual, nueva) => {
     const [r] = await conexion.query(
       `UPDATE usuarios

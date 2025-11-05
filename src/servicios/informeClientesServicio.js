@@ -38,12 +38,13 @@ export default class InformeClientesServicio {
     const csvWriter = createObjectCsvWriter({
       path: filePath,
       header: [
-        { id: "nombre",          title: "nombre" },
-        { id: "apellido",        title: "apellido" },
-        { id: "nombre_usuario",  title: "nombre_usuario" },
-        { id: "cantidad_total",  title: "cantidad_total" },
+        { id: "nombre", title: "Nombre" },
+        { id: "apellido", title: "Apellido" },
+        { id: "nombre_usuario", title: "Usuario" },
+        { id: "celular", title: "Num. de telefono" },
+        { id: "cantidad_total", title: "Cantidad de reservas del usuario" },
       ],
-      fieldDelimiter: ",",  // lo dejamos con comas, como querés
+      fieldDelimiter: ",",
       alwaysQuote: false,
       encoding: "utf8",
     });
@@ -53,6 +54,7 @@ export default class InformeClientesServicio {
         nombre: r.nombre,
         apellido: r.apellido,
         nombre_usuario: r.nombre_usuario,
+        celular: r.celular,
         cantidad_total: Number(r.cantidad_total ?? 0),
       }))
     );

@@ -29,38 +29,60 @@ export default class ReporteReservasServicio {
     return `reporte_reservas_${desde}_a_${hasta}_${ts}.pdf`;
   }
 
-construirHTML(desde, hasta, data) {
-  const fmt = new Intl.NumberFormat("es-AR", { minimumFractionDigits: 2 });
+  construirHTML(desde, hasta, data) {
+    const fmt = new Intl.NumberFormat("es-AR", { minimumFractionDigits: 2 });
 
-  const formatoFechaLocal = (fechaStr) => {
-    if (!fechaStr) return '';
-    const f = new Date(fechaStr + 'T00:00:00');
-    return f.toLocaleDateString('es-AR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
-  };
+    const formatoFechaLocal = (fechaStrOrDate) => {
+      if (!fechaStrOrDate) return '';
+      const f = (fechaStrOrDate instanceof Date)
+        ? fechaStrOrDate
+        : new Date(String(fechaStrOrDate).includes('T') ? fechaStrOrDate : (String(fechaStrOrDate) + 'T00:00:00'));
+      if (isNaN(f.getTime())) return '';
+      return f.toLocaleDateString('es-AR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+    };
 
-  const filas = data.map(r => `
-    <tr>
-      <td>${r.reserva_id}</td>
-      <td>${r.fecha_reserva.toLocaleDateString('es-AR')}</td>
-      <td>${r.salon_titulo}</td>  
-      <td>${r.usuario_nombre} ${r.usuario_apellido}</td>
-      <td>${r.turno_hora_desde} ${r.turno_hora_hasta}</td>
-      <td>${r.tematica}</td>
-      <td>${r.descripcion || "Sin servicios"}</td>
-      <td class="num">${fmt.format(r.importe_salon)}</td>
-      <td class="num">${fmt.format(r.importe || 0)}</td>
-      <td class="num">${fmt.format(r.importe_total)}</td>
-    </tr>
-  `).join("");
+    const safeNum = (v) => {
+      const n = Number(v);
+      return Number.isFinite(n) ? n : 0;
+    };
 
-  const desdeFmt = formatoFechaLocal(desde);
-  const hastaFmt = formatoFechaLocal(hasta);
+    const filas = (Array.isArray(data) ? data : []).map(r => {
+      const id = r.reserva_id ?? '';
+      const fecha = formatoFechaLocal(r.fecha_reserva);
+      const salon = r.salon_nombre ?? '';
+      const cliente = `${r.cliente_nombre ?? ''} ${r.cliente_apellido ?? ''}`.trim() || '';
+      const horario = r.turno_horario ? `${r.turno_horario} h` : '';
+      const tematica = r.tematica ?? '';
+      const servicios = r.servicios ?? 'Sin servicios';
 
-  return `
+      const importeSalon = safeNum(r.importe_salon);
+      const importeServicios = safeNum(r.total_servicios);
+      const totalReserva = safeNum(r.importe_total);
+
+      return `
+      <tr>
+        <td>${id}</td>
+        <td>${fecha}</td>
+        <td>${salon}</td>
+        <td>${cliente}</td>
+        <td>${horario}</td>
+        <td>${tematica}</td>
+        <td>${servicios}</td>
+        <td class="num">$${fmt.format(importeSalon)}</td>
+        <td class="num">$${fmt.format(importeServicios)}</td>
+        <td class="num">$${fmt.format(totalReserva)}</td>
+      </tr>
+    `;
+    }).join("");
+
+    const desdeFmt = formatoFechaLocal(desde);
+    const hastaFmt = formatoFechaLocal(hasta);
+
+    return `
 <!DOCTYPE html>
 <html>
 <head>
@@ -102,8 +124,7 @@ construirHTML(desde, hasta, data) {
 
 </body>
 </html>`;
-}
-
+  }
   async generarPDF(desde, hasta) {
     const datos = await this.obtenerDatos(desde, hasta);
     const filename = this.generarNombreArchivo(desde, hasta);
