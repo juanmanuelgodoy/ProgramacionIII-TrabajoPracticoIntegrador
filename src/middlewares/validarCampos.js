@@ -7,7 +7,7 @@ export const validarCampos = (req, res, next) => {
     return res.status(400).json({
       estado: false,
       mensaje: "Solicitud incorrecta.",
-      errores: errors.array(), // Para ver qué check falló
+      errores: errors.array(),
     });
   }
   next();

@@ -18,7 +18,7 @@ export default function autorizarUsuarios(perfilesPermitidos = []) {
       const rol = Number(usuario.tipo_usuario);
       console.log("rol del token (num):", rol);
 
-      if (!permitidosNum.includes(rol)) {      // ← AQUÍ ESTABA EL BLOQUEO
+      if (!permitidosNum.includes(rol)) {
         console.log("autorizarUsuarios: rol NO permitido -> 403");
         return res.status(403).json({ estado: false, mensaje: "Acceso denegado." });
       }

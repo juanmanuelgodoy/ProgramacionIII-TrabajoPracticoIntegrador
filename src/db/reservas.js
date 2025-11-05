@@ -43,7 +43,7 @@ export default class Reservas {
             [reserva_id]
         );
 
-        return r.affectedRows > 0; // true si se marcó como inactiva
+        return r.affectedRows > 0;
     }
 
     // ================================
@@ -109,7 +109,6 @@ export default class Reservas {
         try {
             await conexion.beginTransaction();
 
-            // Si hay campos editables, hacer UPDATE
             if (campos.length > 0) {
                 const setSql = campos.map(c => `${c} = ?`).join(', ');
                 const [upd] = await conexion.execute(
@@ -123,7 +122,6 @@ export default class Reservas {
                 }
             }
 
-            // Si vienen servicios, reemplazar
             if (Array.isArray(servicios)) {
                 await conexion.execute(
                     `DELETE FROM reservas_servicios WHERE reserva_id = ?`,
@@ -165,7 +163,6 @@ export default class Reservas {
         `;
         const [rows] = await conexion.execute(sql);
 
-        // LOG: qué admins hay en la DB
         console.log('[DB] ADMIN EN DB:', rows);
 
         return rows; // [{correoAdmin:"..."}, ...]
@@ -202,12 +199,10 @@ export default class Reservas {
             return null;
         }
 
-        // LOG: qué datos de la reserva se van a usar
         console.log('[DB] DATOS NOTIF RESERVA:', rows[0]);
 
         const admins = await this.obtenerCorreosAdmins();
 
-        // LOG: admins (por si viene vacío)
         console.log('[DB] ADMIN EN DB (desde datosParaNotificacion):', admins);
 
         return {

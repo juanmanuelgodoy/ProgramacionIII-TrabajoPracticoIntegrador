@@ -20,7 +20,6 @@ export default class AuthControlador {
         { expiresIn: "12h" }
       );
 
-      // Devolvés el usuario tal cual (incluye must_change_password si viene de DB)
       return res.json({ estado: true, token, usuario });
     } catch (err) {
       console.error("[AUTH] ERROR:", err?.message);

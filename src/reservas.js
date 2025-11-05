@@ -18,7 +18,6 @@ import { router as usuariosRutas } from "./v1/rutas/usuariosRutas.js";
 import { router as informesRutas } from "./v1/rutas/informesRutas.js";
 import { swaggerUi, swaggerSpec } from "./config/swagger.js";
 
-// __dirname ESM
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -53,12 +52,12 @@ app.use("/api/v1/auth", authRoutes);
 /* =======================
    Rutas protegidas
 ======================= */
-app.use("/api/v1/salones", passport.authenticate("jwt", { session:false }), salonesRutas);
-app.use("/api/v1/reservas", passport.authenticate("jwt", { session:false }), reservasRutas);
-app.use("/api/v1/servicios", passport.authenticate("jwt", { session:false }), serviciosRutas);
-app.use("/api/v1/turnos", passport.authenticate("jwt", { session:false }), turnosRutas);
-app.use("/api/v1/usuarios", passport.authenticate("jwt", { session:false }), usuariosRutas);
-app.use("/api/v1/informes", passport.authenticate("jwt", { session:false }), informesRutas);
+app.use("/api/v1/salones", passport.authenticate("jwt", { session: false }), salonesRutas);
+app.use("/api/v1/reservas", passport.authenticate("jwt", { session: false }), reservasRutas);
+app.use("/api/v1/servicios", passport.authenticate("jwt", { session: false }), serviciosRutas);
+app.use("/api/v1/turnos", passport.authenticate("jwt", { session: false }), turnosRutas);
+app.use("/api/v1/usuarios", passport.authenticate("jwt", { session: false }), usuariosRutas);
+app.use("/api/v1/informes", passport.authenticate("jwt", { session: false }), informesRutas);
 
 /* =======================
    Swagger
@@ -70,9 +69,9 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 ======================= */
 const PORT = process.env.PUERTO || 3000;
 app.listen(PORT, () => {
-  console.log("======================================");
-  console.log(`Servidor iniciado en http://localhost:${PORT}`);
-  console.log("======================================");
+   console.log("======================================");
+   console.log(`Servidor iniciado en http://localhost:${PORT}`);
+   console.log("======================================");
 });
 
 export default app;

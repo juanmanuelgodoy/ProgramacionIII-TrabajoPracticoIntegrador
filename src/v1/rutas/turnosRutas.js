@@ -26,7 +26,7 @@ const HHMM = /^\d{2}:\d{2}(:\d{2})?$/;
  *       200:
  *         description: Listado de turnos
  */
-router.get("/",  autorizarUsuarios([1,2,3]), ctrl.buscarTodos);
+router.get("/", autorizarUsuarios([1, 2, 3]), ctrl.buscarTodos);
 
 /**
  * @swagger
@@ -43,7 +43,7 @@ router.get("/",  autorizarUsuarios([1,2,3]), ctrl.buscarTodos);
  *       200:
  *         description: Turno encontrado
  */
-router.get("/:turno_id", autorizarUsuarios([1,2,3]), ctrl.buscarPorId);
+router.get("/:turno_id", autorizarUsuarios([1, 2, 3]), ctrl.buscarPorId);
 
 /**
  * @swagger
@@ -67,7 +67,7 @@ router.get("/:turno_id", autorizarUsuarios([1,2,3]), ctrl.buscarPorId);
  *         description: Turno creado
  */
 router.post("/",
-  autorizarUsuarios([1,2]),
+  autorizarUsuarios([1, 2]),
   [
     check("orden", "El orden debe ser entero >= 1.").isInt({ min: 1 }),
     check("hora_desde", "Formato HH:MM.").matches(HHMM),
@@ -103,7 +103,7 @@ router.post("/",
  *         description: Turno actualizado
  */
 router.put("/:turno_id",
-  autorizarUsuarios([1,2]),
+  autorizarUsuarios([1, 2]),
   [
     check("orden").optional().isInt({ min: 1 }),
     check("hora_desde").optional().matches(HHMM),
@@ -128,7 +128,7 @@ router.put("/:turno_id",
  *       200:
  *         description: Turno eliminado
  */
-router.delete("/:turno_id", autorizarUsuarios([1,2]), ctrl.eliminar);
+router.delete("/:turno_id", autorizarUsuarios([1, 2]), ctrl.eliminar);
 
 export { router };
 

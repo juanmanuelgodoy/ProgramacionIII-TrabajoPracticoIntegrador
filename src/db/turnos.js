@@ -5,7 +5,7 @@ export default class Turnos {
   buscarTodos = async () => {
     const sql = `
       SELECT turno_id, orden, TIME_FORMAT(hora_desde, '%H:%i') AS hora_desde,
-             TIME_FORMAT(hora_hasta, '%H:%i') AS hora_hasta
+            TIME_FORMAT(hora_hasta, '%H:%i') AS hora_hasta
       FROM turnos
       WHERE activo = 1
       ORDER BY orden ASC
@@ -17,7 +17,7 @@ export default class Turnos {
   buscarPorId = async (turno_id) => {
     const sql = `
       SELECT turno_id, orden, TIME_FORMAT(hora_desde, '%H:%i') AS hora_desde,
-             TIME_FORMAT(hora_hasta, '%H:%i') AS hora_hasta
+            TIME_FORMAT(hora_hasta, '%H:%i') AS hora_hasta
       FROM turnos
       WHERE activo = 1 AND turno_id = ?
     `;

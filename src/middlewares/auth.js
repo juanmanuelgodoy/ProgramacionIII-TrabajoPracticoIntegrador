@@ -20,7 +20,7 @@ export const validarJWT = (req, res, next) => {
     const token = authHeader.split(" ")[1];
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = decoded; // { uid, tipo_usuario }
+        req.user = decoded;
         next();
     } catch (err) {
         return res.status(401).json({ mensaje: "Token inválido o expirado" });

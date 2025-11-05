@@ -8,7 +8,7 @@ import ReporteReservasControlador from "../../controladores/reporteReservasContr
 const router = express.Router();
 const ctrl = new InformeReservasControlador();
 const ctrlClientes = new InformeClientesControlador();
-const ctrlServicios  = new InformeServiciosControlador();
+const ctrlServicios = new InformeServiciosControlador();
 const ctrlReporte = new ReporteReservasControlador();
 
 /**

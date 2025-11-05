@@ -86,7 +86,6 @@ export default class SalonesControlador {
     }
   };
 
-  // NUEVO: Baja lógica del salón
   eliminar = async (req, res) => {
     try {
       const { salon_id } = req.params;

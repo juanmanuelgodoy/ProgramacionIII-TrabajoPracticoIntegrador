@@ -26,7 +26,6 @@ export default class SalonesServicio {
         return this.salones.crear(salon);
     }
 
-    // Eliminar un salón (borrado lógico)
     eliminar = async (salon_id) => {
         const existe = await this.salones.buscarPorId(salon_id);
         if (!existe) {

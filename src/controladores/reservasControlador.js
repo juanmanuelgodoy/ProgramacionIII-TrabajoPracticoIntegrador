@@ -35,7 +35,7 @@ export default class ReservasControlador {
   buscarPorId = async (req, res) => {
     try {
       const reserva_id = req.params.reserva_id;
-      const reserva = await this.reservasServicio.buscarPorId(reserva_id, req.user); // <-- pasa req.user
+      const reserva = await this.reservasServicio.buscarPorId(reserva_id, req.user); 
 
       if (!reserva) {
         return res.status(404).json({ estado:false, mensaje:'Reserva no encontrada.' });

@@ -118,7 +118,6 @@ export default class UsuariosControlador {
 
 // ======================================================
   // POST /usuarios/reinicio/solicitar-mi-link
-  // (El usuario logueado solicita recibir una contraseña temporal)
   // ======================================================
   solicitarReinicioParaMi = async (req, res) => {
     try {
@@ -141,14 +140,12 @@ export default class UsuariosControlador {
 
   // ======================================================
   // PUT /usuarios/cambiar-contrasenia
-  // (El usuario logueado cambia su contraseña)
   // ======================================================
   cambiarContraseniaDefinitiva = async (req, res) => {
     try {
       const usuarioId = req.user?.uid;
       const { actual_contrasenia, nueva_contrasenia } = req.body;
 
-      // Validación simple
       if (!nueva_contrasenia || nueva_contrasenia.length < 6) {
         return res.status(400).json({
           estado: false,

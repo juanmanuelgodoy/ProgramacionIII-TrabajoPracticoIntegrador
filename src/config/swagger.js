@@ -27,7 +27,6 @@ const options = {
     security: [{ bearerAuth: [] }],
   },
 
-  // Documentaremos todas las rutas dentro de /src/v1/rutas/
   apis: ["./src/v1/rutas/*.js"],
 };
 

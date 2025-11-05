@@ -29,7 +29,7 @@ export default class ReporteReservasControlador {
       return res.status(500).json({
         estado: false,
         mensaje: "Error interno al generar PDF",
-        detalle: err?.message,     // <<— agrega esto
+        detalle: err?.message,    
       });
     }
   };

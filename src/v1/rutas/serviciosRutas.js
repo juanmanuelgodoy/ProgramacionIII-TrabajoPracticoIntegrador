@@ -24,7 +24,7 @@ const ctrl = new ServiciosControlador();
  *       200:
  *         description: Listado de servicios
  */
-router.get("/",  autorizarUsuarios([1,2,3]), ctrl.buscarTodos);
+router.get("/", autorizarUsuarios([1, 2, 3]), ctrl.buscarTodos);
 
 /**
  * @swagger
@@ -41,7 +41,7 @@ router.get("/",  autorizarUsuarios([1,2,3]), ctrl.buscarTodos);
  *       200:
  *         description: Servicio encontrado
  */
-router.get("/:servicio_id", autorizarUsuarios([1,2,3]), ctrl.buscarPorId);
+router.get("/:servicio_id", autorizarUsuarios([1, 2, 3]), ctrl.buscarPorId);
 
 /**
  * @swagger
@@ -64,7 +64,7 @@ router.get("/:servicio_id", autorizarUsuarios([1,2,3]), ctrl.buscarPorId);
  *         description: Servicio creado
  */
 router.post("/",
-  autorizarUsuarios([1,2]),
+  autorizarUsuarios([1, 2]),
   [
     check("descripcion", "La descripción es obligatoria.").notEmpty(),
     check("importe", "El importe debe ser numérico.").isFloat({ gt: 0 }),
@@ -98,7 +98,7 @@ router.post("/",
  *         description: Servicio actualizado
  */
 router.put("/:servicio_id",
-  autorizarUsuarios([1,2]),
+  autorizarUsuarios([1, 2]),
   [
     check("descripcion").optional().notEmpty(),
     check("importe").optional().isFloat({ gt: 0 }),
@@ -122,7 +122,7 @@ router.put("/:servicio_id",
  *       200:
  *         description: Servicio eliminado
  */
-router.delete("/:servicio_id", autorizarUsuarios([1,2]), ctrl.eliminar);
+router.delete("/:servicio_id", autorizarUsuarios([1, 2]), ctrl.eliminar);
 
 export { router };
 

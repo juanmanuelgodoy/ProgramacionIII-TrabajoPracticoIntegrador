@@ -1,4 +1,4 @@
-process.loadEnvFile();   // Cargar .env
+process.loadEnvFile();
 
 import nodemailer from 'nodemailer';
 import fs from 'fs';
@@ -21,16 +21,14 @@ export default class NotificacionesService {
     const user =
       (process.env.CORREO || process.env.USERCORREO || '').trim();
     const pass =
-      (process.env.CLAVE  || process.env.PASSCORREO  || '').trim();
+      (process.env.CLAVE || process.env.PASSCORREO || '').trim();
 
     if (!user || !pass) {
       console.error('[MAIL] Faltan variables .env. Setea CORREO/CLAVE o USERCORREO/PASSCORREO.');
     }
 
-    // Guardamos qué user se está usando para usarlo también en "from"
     this.mailUser = user;
 
-    // Logs útiles (sin exponer la clave)
     console.log('[ENV] usando usuario SMTP =', this.mailUser);
     console.log('[ENV] longitud de clave =', pass.length);
 
@@ -62,11 +60,11 @@ export default class NotificacionesService {
         titulo: 'Nueva reserva creada',
         saludo: 'Hola equipo,',
         cuerpo: 'Se registró una nueva reserva.',
-        fecha:  reserva.fecha,
-        salon:  reserva.salon,
-        turno:  reserva.turno,
+        fecha: reserva.fecha,
+        salon: reserva.salon,
+        turno: reserva.turno,
         nombre: `${reserva.clienteNombre} ${reserva.clienteApellido}`,
-        pie:    'Por favor, revisar y confirmar desde el panel.'
+        pie: 'Por favor, revisar y confirmar desde el panel.'
       });
 
       const mailOptions = {
@@ -101,9 +99,9 @@ export default class NotificacionesService {
         titulo: '¡Tu reserva fue confirmada!',
         saludo: `Hola ${reserva.clienteNombre},`,
         cuerpo: 'Te confirmamos tu reserva.',
-        fecha:  reserva.fecha,
-        salon:  reserva.salon,
-        turno:  reserva.turno,
+        fecha: reserva.fecha,
+        salon: reserva.salon,
+        turno: reserva.turno,
         nombre: `${reserva.clienteNombre} ${reserva.clienteApellido}`,
         pie: '¡Gracias por elegirnos!'
       });
@@ -125,35 +123,33 @@ export default class NotificacionesService {
     }
   }
 
-// === Enviar correo con contraseña temporal ===
-enviarCorreoConContraseniaTemporal = async ({ destino, contraseniaTemporal }) => {
-  try {
-    if (!destino) return false;
+  enviarCorreoConContraseniaTemporal = async ({ destino, contraseniaTemporal }) => {
+    try {
+      if (!destino) return false;
 
-    // Si no te pasan una, usa la fija que querés:
-    const pass = contraseniaTemporal ?? "Prog3DW";
+      const pass = contraseniaTemporal ?? "Prog3DW";
 
-    const html = this.template({
-      // Cabecera
-      titulo: "Contraseña temporal para ingresar",
-      saludo: "Hola,",
-      cuerpo:
-        "Generamos una contraseña temporal para que puedas ingresar y luego cambiarla desde tu perfil.",
-      contrasenia_temporal: pass,
-      pie: "Enviado por Grupo AX",
-    });
-    await this.transporter.sendMail({
-      from: this.mailUser,
-      to: destino,
-      subject: "Tu contraseña temporal",
-      html,
-    });
+      const html = this.template({
 
-    return true;
-  } catch (error) {
-    console.error("[MAIL TEMPORAL] ERROR:", error?.message);
-    return false;
-  }
-};
+        titulo: "Contraseña temporal para ingresar",
+        saludo: "Hola,",
+        cuerpo:
+          "Generamos una contraseña temporal para que puedas ingresar y luego cambiarla desde tu perfil.",
+        contrasenia_temporal: pass,
+        pie: "Enviado por Grupo AX",
+      });
+      await this.transporter.sendMail({
+        from: this.mailUser,
+        to: destino,
+        subject: "Tu contraseña temporal",
+        html,
+      });
+
+      return true;
+    } catch (error) {
+      console.error("[MAIL TEMPORAL] ERROR:", error?.message);
+      return false;
+    }
+  };
 }
 

@@ -290,16 +290,16 @@ router.post(
 
 router.put(
   "/cambiar-contrasenia",
-  (req, res, next) => {                         // DEBUG 1
+  (req, res, next) => {
     console.log("Auth header:", req.headers.authorization);
     next();
   },
-  autorizarUsuarios([1, 2, 3]),                 // usa req.user que setea tu validación global
-  (req, res, next) => {                         // DEBUG 2
+  autorizarUsuarios([1, 2, 3]),
+  (req, res, next) => {
     console.log("req.user después de JWT:", req.user);
     next();
   },
-  ctrl.cambiarContraseniaDefinitiva             // sin paréntesis
+  ctrl.cambiarContraseniaDefinitiva
 );
 
 export { router };

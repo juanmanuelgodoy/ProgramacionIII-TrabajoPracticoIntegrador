@@ -7,7 +7,7 @@ export default class ReservasServicio {
   constructor() {
     this.reserva = new Reservas();
     this.reservas_servicios = new ReservasServicios();
-    this.notificaciones_servicios = new NotificacionesService(); // ✅ corregido
+    this.notificaciones_servicios = new NotificacionesService();
   }
 
   // =============================
@@ -25,7 +25,6 @@ export default class ReservasServicio {
     const r = await this.reserva.buscarPorId(reserva_id);
     if (!r) return null;
 
-    // Cliente solo puede ver sus propias reservas
     if (usuario.tipo_usuario === 3 && r.usuario_id !== usuario.usuario_id) {
       return null;
     }
@@ -61,18 +60,15 @@ export default class ReservasServicio {
       importe_total
     };
 
-    // Guardamos la reserva
     const result = await this.reserva.crear(nuevaReserva);
     if (!result) return null;
 
-    // Insertamos servicios
     await this.reservas_servicios.crear(result.reserva_id, servicios);
 
-    // Notificación a administradores
     try {
       const datos = await this.reserva.datosParaNotificacion(result.reserva_id);
-      await this.notificaciones_servicios.enviarCorreoAdmins(datos); // ✅ cambiado
-      console.log('DATOS NOTIFICACION (CREAR):', datos); //AGREGADO PARA TESTEO 
+      await this.notificaciones_servicios.enviarCorreoAdmins(datos);
+      console.log('DATOS NOTIFICACION (CREAR):', datos);
     } catch (e) {
       console.log('Advertencia: No se pudo enviar el correo a administradores.', e?.message);
     }
@@ -95,10 +91,10 @@ export default class ReservasServicio {
   // =============================
   eliminar = async (reserva_id) => {
     const existe = await this.reserva.buscarPorId(reserva_id);
-    if (!existe) return null;  // 404
+    if (!existe) return null;
 
     const ok = await this.reserva.eliminar(reserva_id);
-    return ok; // true / false
+    return ok;
   }
 
   // =============================
@@ -111,8 +107,8 @@ export default class ReservasServicio {
 
     try {
       const datos = await this.reserva.datosParaNotificacion(reserva_id);
-      await this.notificaciones_servicios.enviarCorreoCliente(datos); 
-      console.log('DATOS NOTIFICACION (CONFIRMAR):', datos); //AGREGADO PARA TESTEO
+      await this.notificaciones_servicios.enviarCorreoCliente(datos);
+      console.log('DATOS NOTIFICACION (CONFIRMAR):', datos);
     } catch (e) {
       console.log('Advertencia: no se pudo enviar el correo de confirmación.', e?.message);
     }
