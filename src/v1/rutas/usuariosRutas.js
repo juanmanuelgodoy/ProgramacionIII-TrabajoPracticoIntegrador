@@ -290,16 +290,15 @@ router.post(
 
 router.put(
   "/cambiar-contrasenia",
-  (req, res, next) => {                         // DEBUG 1
-    console.log("Auth header:", req.headers.authorization);
-    next();
-  },
-  autorizarUsuarios([1, 2, 3]),                 // usa req.user que setea tu validación global
-  (req, res, next) => {                         // DEBUG 2
-    console.log("req.user después de JWT:", req.user);
-    next();
-  },
-  ctrl.cambiarContraseniaDefinitiva             // sin paréntesis
+  autorizarUsuarios([1, 2, 3]),
+  [
+    check("actual_contrasenia").notEmpty().withMessage("Falta actual_contrasenia"),
+    check("nueva_contrasenia")
+      .isLength({ min: 6 })
+      .withMessage("La nueva_contrasenia debe tener al menos 6 caracteres"),
+    validarCampos,
+  ],
+  ctrl.cambiarContraseniaDefinitiva
 );
 
 export { router };

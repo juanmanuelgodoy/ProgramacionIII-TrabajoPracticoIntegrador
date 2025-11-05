@@ -143,45 +143,34 @@ export default class UsuariosControlador {
   // PUT /usuarios/cambiar-contrasenia
   // (El usuario logueado cambia su contraseña)
   // ======================================================
-  cambiarContraseniaDefinitiva = async (req, res) => {
-    try {
-      const usuarioId = req.user?.uid;
-      const { actual_contrasenia, nueva_contrasenia } = req.body;
+cambiarContraseniaDefinitiva = async (req, res) => {
+  try {
+    const usuarioId = req.user?.uid ?? req.user?.usuario_id;
+    const { actual_contrasenia, nueva_contrasenia } = req.body;
 
-      // Validación simple
-      if (!nueva_contrasenia || nueva_contrasenia.length < 6) {
-        return res.status(400).json({
-          estado: false,
-          mensaje: "La contraseña debe tener al menos 6 caracteres.",
-        });
-      }
+    if (!usuarioId) {
+      return res.status(401).json({ estado:false, mensaje:"No autenticado" });
+    }
 
-      const ok = await this.usuariosServicio.cambiarContraseniaDefinitiva(
-        usuarioId,
-        actual_contrasenia,
-        nueva_contrasenia
-      );
+    const ok = await this.usuariosServicio.cambiarContraseniaDefinitiva(
+      usuarioId,
+      actual_contrasenia,
+      nueva_contrasenia
+    );
 
-      if (!ok) {
-        return res.status(400).json({
-          estado: false,
-          mensaje:
-            "No se pudo actualizar. Verificá tu contraseña actual o si estás usando una temporal.",
-        });
-      }
-
-      return res.json({
-        estado: true,
-        mensaje: "Contraseña actualizada correctamente.",
-      });
-    } catch (e) {
-      console.error("[cambiarContrasenia] ERROR:", e?.message);
-      return res.status(500).json({
+    if (!ok) {
+      return res.status(400).json({
         estado: false,
-        mensaje: "Error interno.",
+        mensaje: "Contraseña actual incorrecta o no se pudo actualizar.",
       });
     }
-  };
+
+    return res.json({ estado: true, mensaje: "Contraseña actualizada correctamente." });
+  } catch (e) {
+    console.error("[cambiarContrasenia] ERROR:", e?.message);
+    return res.status(500).json({ estado: false, mensaje: "Error interno." });
+  }
+};
 }
 
 

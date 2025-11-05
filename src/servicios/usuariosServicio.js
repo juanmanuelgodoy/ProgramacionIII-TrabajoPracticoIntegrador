@@ -21,7 +21,6 @@ export default class UsuariosServicio {
   buscarPorId = async (usuario_id, usuarioActual = null) => {
     const u = await this.usuarios.buscarPorId(usuario_id);
     if (!u) return null;
-    // acá podrías validar contra usuarioActual si querés restringir a clientes
     return u;
   };
 
@@ -48,26 +47,23 @@ export default class UsuariosServicio {
     const existe = await this.usuarios.buscarPorId(usuario_id);
     if (!existe) return null;
     const ok = await this.usuarios.eliminar(usuario_id);
-    return ok; // true/false
+    return ok; 
   };
 
   // =========================
-  // GENERAR CONTRASEÑA TEMPORAL (sin TMP, sin cambios de BD)
+  // GENERAR CONTRASEÑA TEMPORAL 
   // =========================
   emitirContraseniaTemporal = async (usuario_id) => {
     const u = await this.usuarios.buscarPorId(usuario_id);
     if (!u) return false;
 
-    // temporal legible de 10 caracteres
     const temporal = "Prog3DW"
 
-    // guarda SHA2(temporal) en DB
+
     const ok = await this.usuarios.actualizarContrasenia(usuario_id, temporal);
     if (!ok) return false;
-
-    // envía email con la temporal
     await this.notificaciones.enviarCorreoConContraseniaTemporal({
-      destino: u.nombre_usuario, // ajusta si tu campo email se llama distinto
+      destino: u.nombre_usuario, 
       contraseniaTemporal: temporal,
     });
 
@@ -75,23 +71,20 @@ export default class UsuariosServicio {
   };
 
   // =========================
-  // CAMBIAR CONTRASEÑA DEFINITIVA (logueado)
+  // CAMBIAR CONTRASEÑA DEFINITIVA
   // =========================
   cambiarContraseniaDefinitiva = async (usuario_id, actual, nueva) => {
     if (!actual || !nueva) return false;
-    // cambio atómico: valida actual y setea nueva (ambas SHA2 en SQL)
+    
     return this.usuarios.cambiarConContraseniaActual(usuario_id, actual, nueva);
   };
 
   // =========================
-  // LOGIN (usado por AuthControlador) — SIN TMP
+  // LOGIN (usado por AuthControlador)
   // =========================
   buscar = async (nombre_usuario, contrasenia) => {
-    // usa el método que ya tenés en db/usuarios.js (valida SHA2 en SQL)
     const u = await this.usuarios.buscar(nombre_usuario, contrasenia);
     if (!u) return null;
-
-    // compatibilidad con tu front (si mostrás esta bandera)
     u.must_change_password = false;
     return u;
   };
